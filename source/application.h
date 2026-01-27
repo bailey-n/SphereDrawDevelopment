@@ -1,0 +1,97 @@
+#ifndef APPLICATION_H
+#define APPLICATION_H
+
+#include <iostream>
+#include <vector>
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <deque>
+#include "application_action.h"
+#include "shader_manager.h"
+#include "planet.h"
+#include "camera.h"
+#include "shapes.h"
+#include "gui.h"
+
+class Application {
+    const static int w_width;
+    const static int w_height;
+    static GLFWwindow* window;
+    static bool initialized;
+    static bool gui_change;
+    static std::deque<AppAction> event_queue;
+    // Maps key, modifier bits to an associated shortcut action
+    static std::map<std::pair<int, int>, AppAction> press_key_actions;
+    static std::map<std::pair<int, int>, AppAction> release_key_actions;
+
+    bool running = false;
+    double deltaTime = 0.0;
+    double previousFrameTime = 0.0f;
+    shaderManager shader_manager;
+    ImDrawData* draw_data = nullptr;
+
+    // Main program
+    Planet planet;
+    Camera camera;
+    SphereDrawGUI app_gui;
+
+    // APPLICATION INIT
+    static bool init_glfw();
+    static void init_imgui();
+    static void bind_input_callbacks();
+    static void set_gl_preferences();
+    static void setup_key_bindings();
+
+    // Event callbacks
+    static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
+    static void mouseButtonCallback(GLFWwindow *win, int button, int action, int mods);
+
+    // Internal struct to hold state values
+    struct State {
+        enum CameraRotation : unsigned char {
+            OrbitLeft = 1,
+            OrbitRight = 2,
+            OrbitUp = 4,
+            OrbitDown = 8,
+            RotateLeft = 16,
+            RotateRight = 32,
+            ZoomIn = 64,
+            ZoomOut = 128
+        };
+        unsigned char camera_motion = 0;
+        double camera_radius = 2.0;
+        float camera_rotate_speed = 1.0f;
+        double camera_zoom_speed = 1.0f;
+
+        enum DrawMode : unsigned char {
+            None = 0,
+            Point = 1,
+            Polyline = 2,
+        };
+        unsigned char draw_mode = Point;
+    };
+    State state;
+
+public:
+    static bool init();
+    // APPLICATION CORE
+    Application();
+    ~Application();
+
+    // APPLICATION MAINLOOP
+    void mainloop();
+
+private:
+    void handle_events();
+    void update_window();
+    void handle_event(const AppAction& action);
+    void render_frame();
+};
+
+#endif //APPLICATION_H
