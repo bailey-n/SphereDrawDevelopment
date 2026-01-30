@@ -12,4 +12,4 @@ unsigned long pixel_index(unsigned int x, unsigned int y, unsigned int width, un
 unsigned long channel_index(unsigned long pixel_index, unsigned int channel, unsigned int channels);
 void extend_cube_map_edges(unsigned char* data, unsigned int channels, unsigned int width, unsigned int height);
 
-#endif //FANTASYPLATES_CUBEMAP_UTIL_H
+#endif //CUBEMAP_UTIL_H

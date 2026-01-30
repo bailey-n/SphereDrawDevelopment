@@ -57,4 +57,4 @@ public:
 };
 
 
-#endif //FANTASYPLATES_SPHERE_MESH_H
+#endif //SPHERE_MESH_H
