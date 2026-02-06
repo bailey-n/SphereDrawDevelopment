@@ -30,8 +30,6 @@ class Quadmap {
     [[nodiscard]] QuadMapId activate_new_id();
     void remove_id(QuadMapId id);
 
-
-
 public:
     QuadMapId add_new_point(const SpherePoint& point);
     QuadMapId add_new_line();

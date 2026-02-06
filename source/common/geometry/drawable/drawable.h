@@ -17,8 +17,8 @@ class Drawable {
     };
 
     Form form;
-    virtual void draw(const Camera& camera) = 0;
-};
 
+    virtual void draw(const Camera &camera) = 0;
+};
 
 #endif //SPHEREDRAW_DRAWABLE_H
