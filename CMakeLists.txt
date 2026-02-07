@@ -100,10 +100,8 @@ add_executable(SphereDraw
         source/common/util/opengl/shader/shader_file.cpp
         source/common/util/opengl/shader/shader_program.cpp
         source/common/util/opengl/shader/shader_program.h
-        source/common/primitives/primitive.h
-        source/common/primitives/primitive.cpp
-        source/common/primitives/primitive_id_manager.h
-        source/common/primitives/primitive_id_manager.cpp
+        source/common/geometry/drawing/primitive_id_manager.h
+        source/common/geometry/drawing/primitive_id_manager.cpp
 
         # NEW INCLUDES (Organize later)
 )
@@ -129,3 +127,5 @@ target_include_directories(SphereDraw PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/util/opengl/shader
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/util/timer
 )
+
+add_subdirectory(test)
