@@ -66,10 +66,16 @@ add_executable(SphereDraw
 
         # Includes for rendered shapes
         # Meshes for OpenGL
+        source/common/geometry/drawable/drawable.cpp
+        source/common/geometry/drawable/drawable.h
         source/common/geometry/meshes/mesh_util.cpp
         source/common/geometry/meshes/mesh_util.h
         source/common/geometry/meshes/sphere_mesh.cpp
         source/common/geometry/meshes/sphere_mesh.h
+        source/common/geometry/quadmap/quadmap.cpp
+        source/common/geometry/quadmap/quadmap.h
+        source/common/geometry/sphere_point.cpp
+        source/common/geometry/sphere_point.h
         # Higher-level shape object classes
 
         # General utility includes
@@ -94,6 +100,8 @@ add_executable(SphereDraw
         source/common/util/opengl/shader/shader_file.cpp
         source/common/util/opengl/shader/shader_program.cpp
         source/common/util/opengl/shader/shader_program.h
+        source/common/geometry/drawing/primitive_id_manager.h
+        source/common/geometry/drawing/primitive_id_manager.cpp
 
         # NEW INCLUDES (Organize later)
 )
@@ -107,8 +115,9 @@ target_include_directories(SphereDraw PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/source
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/geometry
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/common/geometry/drawable
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/geometry/meshes
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/common/geometry/drawing
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/common/geometry/quadmap
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/util
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/util/camera
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/util/cubemap
@@ -118,3 +127,5 @@ target_include_directories(SphereDraw PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/util/opengl/shader
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/util/timer
 )
+
+add_subdirectory(test)

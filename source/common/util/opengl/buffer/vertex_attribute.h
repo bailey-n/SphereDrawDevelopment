@@ -37,4 +37,4 @@ struct vertexAttribute {
     [[nodiscard]] int count() { return size() * sizeof(T) / sizeof(float); }
 };
 
-#endif //FANTASYPLATES_VERTEX_ATTRIBUTE_H
+#endif //VERTEX_ATTRIBUTE_H

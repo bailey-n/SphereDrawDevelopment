@@ -1,5 +1,5 @@
-#ifndef FANTASYPLATES_GUI_H
-#define FANTASYPLATES_GUI_H
+#ifndef GUI_H
+#define GUI_H
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -12,4 +12,4 @@ public:
 };
 
 
-#endif //FANTASYPLATES_GUI_H
+#endif //GUI_H

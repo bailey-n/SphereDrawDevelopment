@@ -27,4 +27,4 @@ struct elementBuffer {
 };
 
 
-#endif //FANTASYPLATES_ELEMENT_BUFFER_H
+#endif //ELEMENT_BUFFER_H
