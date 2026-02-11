@@ -72,10 +72,8 @@ add_executable(SphereDraw
         source/common/geometry/meshes/mesh_util.h
         source/common/geometry/meshes/sphere_mesh.cpp
         source/common/geometry/meshes/sphere_mesh.h
-        source/common/geometry/quadmap/quadmap.cpp
-        source/common/geometry/quadmap/quadmap.h
-        source/common/geometry/sphere_point.cpp
-        source/common/geometry/sphere_point.h
+        source/common/geometry/cubemap/cubemap.cpp
+        source/common/geometry/cubemap/cubemap.h
         # Higher-level shape object classes
 
         # General utility includes
@@ -117,7 +115,7 @@ target_include_directories(SphereDraw PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/geometry
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/geometry/drawable
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/geometry/meshes
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/common/geometry/quadmap
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/common/geometry/cubemap
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/util
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/util/camera
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/util/cubemap
