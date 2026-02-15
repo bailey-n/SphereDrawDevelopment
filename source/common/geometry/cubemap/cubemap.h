@@ -6,18 +6,16 @@
 #define SPHEREDRAW_CUBEMAP_H
 
 #include <vector>
-#include "drawable.h"
-#include "drawing/primitive.h"
-#include "drawing/layer.h"
+#include "primitive.h"
+#include "layer.h"
 #include <cstdint>
 #include <climits>
 #include <set>
 #include <queue>
+#include <map>
 
-using CubeMapId = uint32_t;
-// Reserve max uint32 value for invalid ids, so we can only have uint32_max - 1 features
-#define InvalidId UINT32_MAX
-#define MaxFeatureCt 0xfffffffeU
+#include "cubemap_util.h"
+#include "cubeface.h"
 
 class Cubemap {
     // Attributes/methods for assigning reference ids for external code
@@ -31,33 +29,31 @@ class Cubemap {
     [[nodiscard]] CubeMapId activate_new_id();
     void remove_id(CubeMapId id);
 
+    std::map<CubeMapId, uint32_t> id_map;
+    std::vector<DrawnPrimitiveInfo> primitive_info;
+    CubeFace cube_faces[6];
+
 public:
-    enum ObjectType: uint32_t {
-        InvalidObject = UINT32_MAX,
-        renderLayer = 0,
-        renderPoint = 1,
-        renderLine = 2,
-        renderPolygon = 3,
-    };
+    void draw(const Camera& camera) const;
 
     // Gets the type of the object with the given id.
     // Returns 0 if it is a layer, 1 if it is a point, 2 if it is a line, 3 if it is a polygon.
     // Returns -1 if there is no object with that id.
-    ObjectType get_object_type(CubeMapId cmap_id) const;
+    [[nodiscard]] ObjectType get_object_type(CubeMapId cmap_id) const;
 
     // Gets the id of the layer an object is within.
     // Returns a valid layer id if it is within a layer, or InvalidId if the object is in the root layer or the id is invalid.
-    CubeMapId get_object_layer(CubeMapId cmap_id) const;
+    [[nodiscard]] CubeMapId get_object_layer(CubeMapId cmap_id) const;
 
     // Gets the position of the object in the render list, regardless of its layer.
     // Returns 0 for the first object rendered (the bottom layer), with the maximum return value being for the topmost rendered object.
     // Returns -1 if the object is not in the render list.
-    uint32_t get_global_object_render_position(CubeMapId cmap_id) const;
+    [[nodiscard]] uint32_t get_global_object_render_position(CubeMapId cmap_id) const;
 
     // Gets the position of the object in render list relative to the first object in the layer it is within.
     // If the object is not within a layer (so is in root layer), it returns the same as get_global_object_render_position().
     // Returns -1 if the object is not in the render list.
-    uint32_t get_local_object_render_position(CubeMapId cmap_id) const;
+    [[nodiscard]] uint32_t get_local_object_render_position(CubeMapId cmap_id) const;
 
     // Gets the type of object which is currently being constructed.
     // Returns 1 if it is a point, 2 if it is a line, or 3 if it is a polygon.

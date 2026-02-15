@@ -39,7 +39,7 @@ public:
 
     glm::vec3 p {0.f, 0.f, 1.f};
     glm::vec4 color {1.f, 1.f, 1.f, 1.f};
-    float size = 3.0f; //optional, ask Nathan if he thinks we need this later
+    float size = 0.007f; //optional, ask Nathan if he thinks we need this later
 };
 
 //Polyline: list of vertices + line width

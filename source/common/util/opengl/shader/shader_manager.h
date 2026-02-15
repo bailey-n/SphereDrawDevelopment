@@ -37,6 +37,7 @@ public:
         std::string tessellation_control_path, std::string tessellation_evaluation_path);
     ~shaderManager();
     GLuint operator[](std::vector<std::string> shader_paths);
+    static GLuint get_program(std::vector<std::string> paths);
 };
 
 

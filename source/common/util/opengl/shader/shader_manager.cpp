@@ -1,5 +1,6 @@
 #include "shader_manager.h"
 #include <iostream>
+#include <utility>
 
 std::string shaderManager::shader_root;
 std::map<std::string, shaderFile> shaderManager::shader_files = {};
@@ -33,6 +34,7 @@ shaderManager::shaderManager(
 shaderManager::~shaderManager() {
     refcount -= 1;
     if (!refcount) {
+        // std::cout << "Destroying Shader Programs" << std::endl;
         for (const auto& program: shader_programs) {
             if (program.second.build_okay()) glDeleteProgram(program.second.program_id);
         }
@@ -87,7 +89,17 @@ bool shaderManager::load_program_if_not_loaded(const std::vector<std::string>& p
 }
 
 GLuint shaderManager::operator[](std::vector<std::string> shader_paths) {
-    for (auto& path: shader_paths) path = shader_root + path;
+    return get_program(std::move(shader_paths));
+}
+
+void shaderManager::set_shader_root_directory(const std::string directory) {
+    shader_root = directory;
+}
+
+GLuint shaderManager::get_program(std::vector<std::string> shader_paths) {
+    for (auto& path: shader_paths) {
+        path = shader_root + path;
+    }
     if (!load_program_if_not_loaded(shader_paths)) {
         std::cout << "Warning: failed to generate shader program" << std::endl;
         return -1;
@@ -101,8 +113,4 @@ GLuint shaderManager::operator[](std::vector<std::string> shader_paths) {
         return -1;
     }
     return shader_programs.at(prog_name).program_id;
-}
-
-void shaderManager::set_shader_root_directory(const std::string directory) {
-    shader_root = directory;
 }

@@ -18,6 +18,7 @@
 #include "camera.h"
 #include "shapes.h"
 #include "gui.h"
+#include "cubemap.h"
 
 class Application {
     const static int w_width;
@@ -40,6 +41,7 @@ class Application {
     Planet planet;
     Camera camera;
     SphereDrawGUI app_gui;
+    Cubemap renderer;
 
     // APPLICATION INIT
     static bool init_glfw();
