@@ -3,13 +3,41 @@
 #include <fstream>
 #include <stdexcept>
 #include <string>
+#include <chrono>
+#include <ctime>
+#include <cstdio>
 
 #include <nlohmann/json.hpp>
 #include <glm/glm.hpp>
 
 #include "project.h"
+#include "primitive_id_manager.h"
 
 using json = nlohmann::json;
+
+// Helper for timestamping
+static std::string utc_now_iso8601() {
+    using namespace std::chrono;
+
+    auto now = system_clock::now();
+    auto t = system_clock::to_time_t(now);
+
+    std::tm tm{};
+#ifdef _WIN32
+    gmtime_s(&tm, &t);
+#else
+    gmtime_r(&t, &tm);
+#endif
+
+    char buf[32];
+    std::snprintf(buf, sizeof(buf),
+            "%04d-%02d-%02dT%02d:%02d:%02dZ",
+            tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+            tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+    return std::string(buf);
+}
+
 
 // glm <-> json helpers
 
@@ -130,7 +158,13 @@ inline Layer layerFromJson(const json& j){
 }
 
 //Project <-> file
-inline void SaveProjectToFile(const Project& project, const std::string& filepath){
+inline void SaveProjectToFile(Project& project, const std::string& filepath){
+    // Set created UTC once on first save, then set modified on every save
+    if (project.createdUtc.empty()) {
+        project.createdUtc = utc_now_iso8601();
+    }
+    project.modifiedUtc = utc_now_iso8601();
+
     json j;
     j["format"] = "spheredraw_project";
     j["format_version"] = project.formatVersion;
@@ -165,6 +199,8 @@ inline Project LoadProjectFromFile(const std::string& filepath){
         throw std::runtime_error("Not a SphereDraw project file (format mismatch).");
     }
 
+    PrimIDManager::reset();
+
     Project project;
     project.formatVersion = j.value("format_version", 1);
     project.createdUtc = j.value("created_utc", "");
@@ -181,8 +217,14 @@ inline Project LoadProjectFromFile(const std::string& filepath){
 
     //Primitives
     project.primitives.clear();
-    if(j.contains("primitives")){
-        for(const auto& pj : j.at("primitives")){
+    if (j.contains("primitives")) {
+        for (const auto& pj : j.at("primitives")) {
+            // Reserve the ID first so collisions are caught immediately
+            uint32_t id = pj.at("id").get<uint32_t>();
+            if (!PrimIDManager::add_id(id)) {
+                throw std::runtime_error("Duplicate primitive id in file: " + std::to_string(id));
+            }
+
             auto prim = primitiveFromJson(pj);
             project.primitives[prim->getID()] = std::move(prim);
         }
