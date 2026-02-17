@@ -5,6 +5,33 @@
 #include "cubemap.h"
 #include <iostream>
 
+uint32_t Cubemap::layer_size(const LayerPrimitiveInfo &info) const {
+    uint32_t layer_pos = get_global_object_render_position(info.id);
+    uint32_t last_pos = get_global_object_render_position(info.end_id);
+    return last_pos - layer_pos;
+}
+
+void Cubemap::remove_element_from_parent_layer(CubeMapId cmap_id) {
+    auto parent_layer = primitive_map.at(cmap_id).parent_layer;
+    if (parent_layer == InvalidId) return;
+    auto& end_elem = layer_map.at(parent_layer).end_id;
+    if (end_elem == cmap_id) {
+        end_elem = draw_order[get_global_object_render_position(end_elem)-1];
+    }
+}
+
+void Cubemap::reset() {
+    for (auto& face: cube_faces) face.reset();
+    draw_order.clear();
+    layer_map.clear();
+    primitive_map.clear();
+
+    deactivated_ids.clear();
+    active_ids.clear();
+    lowest_unused_id = 0;
+    feature_count = 0;
+}
+
 bool Cubemap::is_active_id(CubeMapId id) {
     return active_ids.contains(id);
 }
@@ -63,7 +90,8 @@ void Cubemap::remove_id(CubeMapId id) {
 }
 
 void Cubemap::draw(const Camera &camera) const {
-    for (const auto& primitive: primitive_info) {
+    for (const auto id: draw_order) {
+        const auto& primitive = primitive_map.at(id);
         if (primitive.type != ObjectType::InvalidObject && primitive.type != ObjectType::renderLayer) {
             if (primitive.face_flags & flagNorth) cube_faces[North].draw(primitive.id, primitive.type, camera);
             if (primitive.face_flags & flagWest) cube_faces[West].draw(primitive.id, primitive.type, camera);
@@ -76,30 +104,39 @@ void Cubemap::draw(const Camera &camera) const {
 }
 
 ObjectType Cubemap::get_object_type(CubeMapId cmap_id) const {
-    if (!id_map.contains(cmap_id)) return InvalidObject;
-    return primitive_info.at(id_map.at(cmap_id)).type;
+    if (!primitive_map.contains(cmap_id)) return InvalidObject;
+    return primitive_map.at(cmap_id).type;
 }
 
 CubeMapId Cubemap::get_object_layer(CubeMapId cmap_id) const {
-    if (!id_map.contains(cmap_id)) return InvalidId;
-    return primitive_info.at(id_map.at(cmap_id)).parent_layer;
+    if (!primitive_map.contains(cmap_id)) return InvalidId;
+    return primitive_map.at(cmap_id).parent_layer;
 }
 
 uint32_t Cubemap::get_global_object_render_position(CubeMapId cmap_id) const {
-    if (!id_map.contains(cmap_id)) return InvalidId;
-    return primitive_info.at(id_map.at(cmap_id)).draw_position;
+    if (!primitive_map.contains(cmap_id)) return InvalidId;
+    for (unsigned int i = 0; i < draw_order.size(); i++) {
+        if (cmap_id == draw_order[i]) return i;
+    }
+    return InvalidId;
 }
 
 uint32_t Cubemap::get_local_object_render_position(CubeMapId cmap_id) const {
-    if (!id_map.contains(cmap_id)) return InvalidId;
+    if (!primitive_map.contains(cmap_id)) return InvalidId;
     uint32_t global_draw_position = get_global_object_render_position(cmap_id);
     CubeMapId object_layer = get_object_layer(cmap_id);
     if (object_layer == InvalidId) return global_draw_position;
-    uint32_t layer_draw_position = primitive_info.at(id_map.at(object_layer)).draw_position;
-    return global_draw_position - layer_draw_position;
+    uint32_t layer_draw_position = get_global_object_render_position(object_layer);
+    return global_draw_position - layer_draw_position - 1;
 }
 
 CubeMapId Cubemap::add_new_point(const PointPrimitive &point, CubeMapId layer, uint32_t position) {
+    // Ensure layer exists
+    if (layer != InvalidId && !primitive_map.contains(layer)) return InvalidId;
+    // Clamp position
+    if (layer == InvalidId) { position = std::min(position, (uint32_t)draw_order.size()); }
+    else { position = std::min(position, layer_size(layer_map.at(layer))); }
+
     CubeFaceNum face = get_face(point.p);
 
     // TODO: Account for layer and position insertion
@@ -116,15 +153,48 @@ CubeMapId Cubemap::add_new_point(const PointPrimitive &point, CubeMapId layer, u
         case South: flags = flagSouth; break;
     }
 
-    primitive_info.emplace_back(
-            renderPoint,
-            render_id,
-            InvalidId,
-            primitive_info.size(),
-            flags
-            );
-
+    // Add point
+    primitive_map.try_emplace(render_id, renderPoint, render_id, layer, flags);
     cube_faces[face].add_new_point_primitive(render_id, point);
 
+    // TODO: Change to support recursive layer insertion
+    if (position == -1) {
+        if (layer == InvalidId) draw_order.emplace_back(render_id);
+        else {
+            position = get_global_object_render_position(layer_map.at(layer).end_id) + 1;
+            layer_map.at(layer).end_id = render_id;
+            draw_order.insert(draw_order.begin() + position, render_id);
+        }
+    }
+    else {
+        if (layer == InvalidId) {
+            draw_order.insert(draw_order.begin() + position, render_id);
+        }
+        else {
+            auto global_position = get_global_object_render_position(layer) + 1 + position;
+            if (position == layer_size(layer_map.at(layer))) { layer_map.at(layer).end_id = render_id; }
+            draw_order.insert(draw_order.begin() + global_position, render_id);
+        }
+    }
+
     return render_id;
+}
+
+bool Cubemap::remove_point(CubeMapId cmap_id) {
+    if (active_ids.contains(cmap_id)) return false;
+    auto& info = primitive_map.at(cmap_id);
+    if (info.type != ObjectType::renderPoint) return false;
+    auto flags = info.face_flags;
+
+    if (flags & flagNorth) { cube_faces[North].remove_point_primitive(cmap_id); }
+    if (flags & flagWest) { cube_faces[West].remove_point_primitive(cmap_id); }
+    if (flags & flagMeridian) { cube_faces[Meridian].remove_point_primitive(cmap_id); }
+    if (flags & flagEast) { cube_faces[East].remove_point_primitive(cmap_id); }
+    if (flags & flagAntiMeridian) { cube_faces[AntiMeridian].remove_point_primitive(cmap_id); }
+    if (flags & flagSouth) { cube_faces[South].remove_point_primitive(cmap_id); }
+
+    remove_element_from_parent_layer(cmap_id);
+    draw_order.erase(draw_order.begin()+get_global_object_render_position(cmap_id));
+    primitive_map.erase(cmap_id);
+    remove_id(cmap_id);
 }

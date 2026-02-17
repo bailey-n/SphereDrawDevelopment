@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <climits>
 #include "glm/vec3.hpp"
+#include <vector>
 
 using CubeMapId = uint32_t;
 using CubeFaceFlags = uint8_t;
@@ -47,8 +48,12 @@ struct DrawnPrimitiveInfo {
     ObjectType type;
     CubeMapId id;
     CubeMapId parent_layer;
-    uint32_t draw_position;
     CubeFaceFlags face_flags;
+};
+
+struct LayerPrimitiveInfo {
+    CubeMapId id;
+    CubeMapId end_id;
 };
 
 CubeFaceNum get_face(const glm::vec3& position);

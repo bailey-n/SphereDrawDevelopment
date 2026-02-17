@@ -31,12 +31,19 @@ class Cubemap {
     [[nodiscard]] CubeMapId activate_new_id();
     void remove_id(CubeMapId id);
 
-    std::map<CubeMapId, uint32_t> id_map;
-    std::vector<DrawnPrimitiveInfo> primitive_info;
+    std::vector<CubeMapId> draw_order;
+    std::map<CubeMapId, LayerPrimitiveInfo> layer_map;
+    std::map<CubeMapId, DrawnPrimitiveInfo> primitive_map;
     CubeFace cube_faces[6];
+
+    [[nodiscard]] uint32_t layer_size(const LayerPrimitiveInfo& info) const;
+    void remove_element_from_parent_layer(CubeMapId cmap_id);
 
 public:
     void draw(const Camera& camera) const;
+
+    // Resets the cubemap and removes all rendered objects
+    void reset();
 
     // Gets the type of the object with the given id.
     // Returns 0 if it is a layer, 1 if it is a point, 2 if it is a line, 3 if it is a polygon.
