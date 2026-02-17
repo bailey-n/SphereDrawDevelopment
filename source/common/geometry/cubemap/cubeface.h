@@ -15,7 +15,9 @@ class CubeFace {
 
 public:
     CubeFace();
+    void reset();
     void add_new_point_primitive(CubeMapId id, const PointPrimitive& point_data);
+    void remove_point_primitive(CubeMapId id);
     void draw(CubeMapId id, ObjectType type, const Camera& camera) const;
 };
 

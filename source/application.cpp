@@ -204,11 +204,24 @@ void Application::mainloop() {
 //    std::uniform_real_distribution<float> long_dist(-M_PI, M_PI);
 //    std::uniform_real_distribution<float> lat_dist(-M_PI/2.0, M_PI/2.0);
 //    std::uniform_real_distribution<float> color_dist(0.0f, 1.0f);
+//    std::vector<CubeMapId> ids;
 //    for (int i = 0; i < 500; i++) {
 //        test_point.p = lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f);
 //        test_point.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
-//        renderer.add_new_point(test_point);
+//        ids.emplace_back(renderer.add_new_point(test_point));
 //    }
+//    for (int i = 0; i < 500; i++) {
+//        std::shuffle(ids.begin(), ids.end(), rng);
+//        for (auto id: ids) {
+//            renderer.remove_point(id);
+//        }
+//    }
+//    for (int i = 0; i < 250; i++) {
+//        test_point.p = lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f);
+//        test_point.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
+//        ids.emplace_back(renderer.add_new_point(test_point));
+//    }
+//    renderer.reset();
     // END TEST
 
     constexpr double rotations_per_second = 0.5;
