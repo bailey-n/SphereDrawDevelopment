@@ -66,10 +66,8 @@ add_executable(SphereDraw
 
         # Includes for rendered shapes
         # Meshes for OpenGL
-        source/common/geometry/drawable/drawable.cpp
-        source/common/geometry/drawable/drawable.h
-        source/common/geometry/meshes/mesh_util.cpp
-        source/common/geometry/meshes/mesh_util.h
+        source/common/util/opengl/buffer/mesh_util.cpp
+        source/common/util/opengl/buffer/mesh_util.h
         source/common/geometry/meshes/sphere_mesh.cpp
         source/common/geometry/meshes/sphere_mesh.h
         source/common/geometry/cubemap/cubemap.cpp
@@ -79,8 +77,8 @@ add_executable(SphereDraw
         # General utility includes
         source/common/util/camera/camera.cpp
         source/common/util/camera/camera.h
-        source/common/util/cubemap/cubemap_util.cpp
-        source/common/util/cubemap/cubemap_util.h
+        source/common/util/cubemap/cubemap_texture_util.cpp
+        source/common/util/cubemap/cubemap_texture_util.h
         source/common/util/math/shapes.cpp
         source/common/util/math/shapes.h
         source/common/util/timer/timer.cpp
@@ -100,6 +98,14 @@ add_executable(SphereDraw
         source/common/util/opengl/shader/shader_program.h
         source/common/geometry/drawing/primitive_id_manager.h
         source/common/geometry/drawing/primitive_id_manager.cpp
+        source/common/geometry/meshes/point_mesh.h
+        source/common/geometry/meshes/point_mesh.cpp
+        source/common/geometry/meshes/basic_mesh.h
+        source/common/geometry/meshes/basic_mesh.cpp
+        source/common/geometry/cubemap/cubemap_util.h
+        source/common/geometry/cubemap/cubeface.h
+        source/common/geometry/cubemap/cubeface.cpp
+        source/common/geometry/cubemap/cubemap_util.cpp
 
         # NEW INCLUDES (Organize later)
 )
@@ -113,7 +119,7 @@ target_include_directories(SphereDraw PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/source
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/geometry
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/common/geometry/drawable
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/common/geometry/drawing
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/geometry/meshes
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/geometry/cubemap
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/util

@@ -1,6 +1,6 @@
 #include "sphere_mesh.h"
 #include <iostream>
-#include "cubemap_util.h"
+#include "cubemap_texture_util.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include "mesh_util.h"
@@ -49,6 +49,7 @@ indices(data.indices),
 program(-1),
 model(model) {
     load_texture();
+    glBindVertexArray(0);
 }
 
 SphereMesh::~SphereMesh() {
@@ -94,7 +95,7 @@ void SphereMesh::draw(const Camera& camera, float texture_opacity) const {
 
     glBindTexture(GL_TEXTURE_2D, Texture);
     glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLES,indices.count(),GL_UNSIGNED_INT,indices.data());
+    glDrawElements(GL_TRIANGLES,indices.count(),GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
 }
 

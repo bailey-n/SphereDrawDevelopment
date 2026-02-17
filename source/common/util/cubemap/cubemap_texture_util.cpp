@@ -1,4 +1,4 @@
-#include "cubemap_util.h"
+#include "cubemap_texture_util.h"
 #include <unistd.h>
 #include <deque>
 #include <map>

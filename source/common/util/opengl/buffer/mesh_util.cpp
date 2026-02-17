@@ -1,9 +1,5 @@
 #include "mesh_util.h"
-
-GLuint gen_float_1_vbo(int loc, long v_count, void* data) { return gen_float_n_vbo<1>(loc, v_count, data); }
-GLuint gen_float_2_vbo(int loc, long v_count, void* data) { return gen_float_n_vbo<2>(loc, v_count, data); }
-GLuint gen_float_3_vbo(int loc, long v_count, void* data) { return gen_float_n_vbo<3>(loc, v_count, data); }
-GLuint gen_float_4_vbo(int loc, long v_count, void* data) { return gen_float_n_vbo<4>(loc, v_count, data); }
+#include <iostream>
 
 GLuint gen_vao_and_bind() {
     GLuint vao;

@@ -62,6 +62,69 @@ void Cubemap::remove_id(CubeMapId id) {
     deactivated_ids.insert(curr, id);
 }
 
-CubeMapId Cubemap::add_new_point(const SpherePoint& point) {
+void Cubemap::draw(const Camera &camera) const {
+    for (const auto& primitive: primitive_info) {
+        if (primitive.type != ObjectType::InvalidObject && primitive.type != ObjectType::renderLayer) {
+            if (primitive.face_flags & flagNorth) cube_faces[North].draw(primitive.id, primitive.type, camera);
+            if (primitive.face_flags & flagWest) cube_faces[West].draw(primitive.id, primitive.type, camera);
+            if (primitive.face_flags & flagMeridian) cube_faces[Meridian].draw(primitive.id, primitive.type, camera);
+            if (primitive.face_flags & flagEast) cube_faces[East].draw(primitive.id, primitive.type, camera);
+            if (primitive.face_flags & flagAntiMeridian) cube_faces[AntiMeridian].draw(primitive.id, primitive.type, camera);
+            if (primitive.face_flags & flagSouth) cube_faces[South].draw(primitive.id, primitive.type, camera);
+        }
+    }
+}
 
+ObjectType Cubemap::get_object_type(CubeMapId cmap_id) const {
+    if (!id_map.contains(cmap_id)) return InvalidObject;
+    return primitive_info.at(id_map.at(cmap_id)).type;
+}
+
+CubeMapId Cubemap::get_object_layer(CubeMapId cmap_id) const {
+    if (!id_map.contains(cmap_id)) return InvalidId;
+    return primitive_info.at(id_map.at(cmap_id)).parent_layer;
+}
+
+uint32_t Cubemap::get_global_object_render_position(CubeMapId cmap_id) const {
+    if (!id_map.contains(cmap_id)) return InvalidId;
+    return primitive_info.at(id_map.at(cmap_id)).draw_position;
+}
+
+uint32_t Cubemap::get_local_object_render_position(CubeMapId cmap_id) const {
+    if (!id_map.contains(cmap_id)) return InvalidId;
+    uint32_t global_draw_position = get_global_object_render_position(cmap_id);
+    CubeMapId object_layer = get_object_layer(cmap_id);
+    if (object_layer == InvalidId) return global_draw_position;
+    uint32_t layer_draw_position = primitive_info.at(id_map.at(object_layer)).draw_position;
+    return global_draw_position - layer_draw_position;
+}
+
+CubeMapId Cubemap::add_new_point(const PointPrimitive &point, CubeMapId layer, uint32_t position) {
+    CubeFaceNum face = get_face(point.p);
+
+    // TODO: Account for layer and position insertion
+    CubeMapId render_id = activate_new_id();
+    if (render_id == InvalidId) return InvalidId;
+
+    CubeFaceFlags flags;
+    switch (face) {
+        case North: flags = flagNorth; break;
+        case West: flags = flagWest; break;
+        case Meridian: flags = flagMeridian; break;
+        case East: flags = flagEast; break;
+        case AntiMeridian: flags = flagAntiMeridian; break;
+        case South: flags = flagSouth; break;
+    }
+
+    primitive_info.emplace_back(
+            renderPoint,
+            render_id,
+            InvalidId,
+            primitive_info.size(),
+            flags
+            );
+
+    cube_faces[face].add_new_point_primitive(render_id, point);
+
+    return render_id;
 }

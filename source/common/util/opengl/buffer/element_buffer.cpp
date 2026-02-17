@@ -12,14 +12,14 @@ elementBuffer::~elementBuffer() {
 }
 
 void elementBuffer::re_buffer() {
-    glBindBuffer(GL_INDEX_ARRAY, ebo);
-    glBufferData(GL_INDEX_ARRAY, size() * (long long)sizeof(glm::u32vec3), data(), GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size() * (long long)sizeof(glm::u32vec3), data(), GL_DYNAMIC_DRAW);
 }
 
 void elementBuffer::re_buffer_data(const std::vector<glm::u32vec3> &indices_) {
     indices = indices_;
-    glBindBuffer(GL_INDEX_ARRAY, ebo);
-    glBufferData(GL_INDEX_ARRAY, size() * (long long)sizeof(glm::u32vec3), data(), GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size() * (long long)sizeof(glm::u32vec3), data(), GL_DYNAMIC_DRAW);
 }
 
 long long elementBuffer::size() const {

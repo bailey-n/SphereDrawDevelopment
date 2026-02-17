@@ -21,6 +21,7 @@
 #include "common/geometry/drawing/project.h"
 #include "common/geometry/drawing/project_io.h"
 
+#include "cubemap.h"
 
 class Application {
     const static int w_width;
@@ -43,6 +44,7 @@ class Application {
     Planet planet;
     Camera camera;
     SphereDrawGUI app_gui;
+    Cubemap renderer;
 
     // Project state (for Save/Load/New)
     Project project;

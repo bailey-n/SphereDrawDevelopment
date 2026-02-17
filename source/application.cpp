@@ -3,6 +3,8 @@
 #include <thread>
 #include <cmath>
 #include <filesystem>
+#include <random>
+#include "shapes.h"
 
 // ################################################## //
 
@@ -107,7 +109,8 @@ void Application::set_gl_preferences() {
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
-    glEnable(GL_CULL_FACE);
+    glDisable(GL_CULL_FACE);
+    // glEnable(GL_CULL_FACE);
     glPointSize(10.0f);
     glLineWidth(4.0f);
 }
@@ -194,6 +197,20 @@ void Application::mouseButtonCallback(GLFWwindow *win, int button, int action, i
 
 // APPLICATION MAINLOOP
 void Application::mainloop() {
+    // FOR TESTING SPEED & STABILITY
+//    PointPrimitive test_point(0);
+//    std::random_device rd;
+//    std::default_random_engine rng(rd());
+//    std::uniform_real_distribution<float> long_dist(-M_PI, M_PI);
+//    std::uniform_real_distribution<float> lat_dist(-M_PI/2.0, M_PI/2.0);
+//    std::uniform_real_distribution<float> color_dist(0.0f, 1.0f);
+//    for (int i = 0; i < 500; i++) {
+//        test_point.p = lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f);
+//        test_point.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
+//        renderer.add_new_point(test_point);
+//    }
+    // END TEST
+
     constexpr double rotations_per_second = 0.5;
     constexpr unsigned int FPS = 60;
     const double TARGET_FRAME_TIME = 1.0 / (double)FPS;
@@ -473,6 +490,7 @@ void Application::render_frame() {
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     planet.draw(camera);
+    renderer.draw(camera);
     draw_data = ImGui::GetDrawData();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(window);
