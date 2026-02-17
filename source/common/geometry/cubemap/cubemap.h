@@ -6,7 +6,6 @@
 #define SPHEREDRAW_CUBEMAP_H
 
 #include <vector>
-#include "drawable.h"
 #include "drawing/primitive.h"
 #include "drawing/layer.h"
 #include "primitive.h"
