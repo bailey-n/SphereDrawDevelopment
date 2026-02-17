@@ -18,6 +18,9 @@
 #include "camera.h"
 #include "shapes.h"
 #include "gui.h"
+#include "common/geometry/drawing/project.h"
+#include "common/geometry/drawing/project_io.h"
+
 #include "cubemap.h"
 
 class Application {
@@ -42,6 +45,12 @@ class Application {
     Camera camera;
     SphereDrawGUI app_gui;
     Cubemap renderer;
+
+    // Project state (for Save/Load/New)
+    Project project;
+    std::string project_filepath = "project_files/out/project.json";
+    std::string project_status;
+    bool show_project_status = false;
 
     // APPLICATION INIT
     static bool init_glfw();

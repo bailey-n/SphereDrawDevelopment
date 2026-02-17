@@ -19,6 +19,7 @@ public:
     static bool add_id(unsigned int id);
     static bool remove_id(unsigned int id);
     static unsigned int get_unused_id();
+    static void reset(); // sean added to make project.h and project_io.h work
 };
 
 

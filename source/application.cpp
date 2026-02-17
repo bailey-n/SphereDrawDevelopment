@@ -2,10 +2,35 @@
 #include <chrono>
 #include <thread>
 #include <cmath>
+#include <filesystem>
 #include <random>
 #include "shapes.h"
 
 // ################################################## //
+
+//Helper function for creating unique JSON filenames (timestamped)
+static std::string make_timestamped_project_name() {
+    using namespace std::chrono;
+
+    auto now = system_clock::now();
+    auto t = system_clock::to_time_t(now);
+
+    std::tm tm{};
+#ifdef _WIN32
+    localtime_s(&tm, &t);
+#else
+    localtime_r(&t, &tm);
+#endif
+
+    char buf[64];
+    std::snprintf(buf, sizeof(buf),
+            "project_%04d-%02d-%02d_%02d-%02d-%02d.json",
+            tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+            tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+    return std::string(buf);
+}
+
 
 // Static variable initialization
 const int Application::w_width = 1200;
@@ -33,6 +58,7 @@ void Application::init_imgui() {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
+    io.FontGlobalScale = 1.8f;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -401,8 +427,66 @@ void Application::render_frame() {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     // // ImGui::ShowDemoWindow();
-    SphereDrawGUI::MainMenuBar();
+    ProjectMenuAction action = app_gui.DrawMainMenuBar(project_filepath);
+
+    try {
+        if (action == ProjectMenuAction::NewProject) {
+            // Reset project in memory
+            project = Project();
+
+            // Always generate a new unique file name on New
+            std::filesystem::path dir("project_files/out");
+            std::filesystem::create_directories(dir);
+
+            project_filepath = (dir / make_timestamped_project_name()).string();
+
+            // Create the blank file immediately
+            SaveProjectToFile(project, project_filepath);
+
+            project_status = "New project created and saved to:\n" + project_filepath;
+            show_project_status = true;
+        }
+        else if (action == ProjectMenuAction::SaveProject) {
+            if (project_filepath.empty()) {
+                throw std::runtime_error("No project file path set. Enter a file path in Project menu.");
+            }
+
+            std::filesystem::path p(project_filepath);
+            if (p.has_parent_path()) {
+                std::filesystem::create_directories(p.parent_path());
+            }
+
+            SaveProjectToFile(project, project_filepath);
+
+            project_status = "Saved project to:\n" + project_filepath;
+            show_project_status = true;
+        }
+        else if (action == ProjectMenuAction::LoadProject) {
+            if (project_filepath.empty()) {
+                throw std::runtime_error("No project file path set. Enter a file path in Project menu.");
+            }
+
+            if (!std::filesystem::exists(project_filepath)) {
+                throw std::runtime_error("File does not exist:\n" + project_filepath);
+            }
+
+            project = LoadProjectFromFile(project_filepath);
+
+            project_status = "Loaded project from:\n" + project_filepath;
+            show_project_status = true;
+        }
+    }
+    catch (const std::exception& e) {
+        project_status = std::string("Project I/O error:\n") + e.what();
+        show_project_status = true;
+    }
+
+    // Status window (closable)
+    app_gui.DrawStatusWindow(&show_project_status, project_status);
+
+
     ImGui::Render();
+
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     planet.draw(camera);

@@ -26,6 +26,12 @@ bool PrimIDManager::remove_id(unsigned int id) {
     used_ids.erase(id);
     return true;
 }
+
+//Clears all used_ids
+void PrimIDManager::reset() {
+    used_ids.clear();
+}
+
 unsigned int PrimIDManager::get_unused_id() {
     // Change later if this runs into performance issues.
     unsigned int guess = (UINT_MAX>>1) - used_ids.size();

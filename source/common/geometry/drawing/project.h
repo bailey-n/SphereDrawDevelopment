@@ -5,9 +5,11 @@
 #include <vector>
 #include <unordered_map>
 #include <memory>
+#include <algorithm>
 
 #include "primitive.h"
 #include "layer.h"
+#include "primitive_id_manager.h"
 
 // Represents a SphereDraw document in memory
 class Project {
@@ -24,6 +26,7 @@ public:
     std::unordered_map<uint32_t, std::unique_ptr<Primitive>> primitives;
 
     Project(){
+        PrimIDManager::reset();
         ensureDefaultLayer();
     }
 
@@ -38,7 +41,33 @@ public:
     }
 
     //ID generation helpers
-    uint32_t nextPrimitiveID() { return nextPrimitiveID_++;}
+    uint32_t nextPrimitiveID() {
+        // Get an unused id, then immediately reserve it.
+        uint32_t id = static_cast<uint32_t>(PrimIDManager::get_unused_id());
+        // In the (unlikely) case of collision, keep trying.
+        while (!PrimIDManager::add_id(id)) {
+            id = static_cast<uint32_t>(PrimIDManager::get_unused_id());
+        }
+        return id;
+    }
+
+    //deletes a primitive and removes its id
+    bool deletePrimitive(uint32_t id) {
+        auto it = primitives.find(id);
+        if (it == primitives.end()) return false;
+
+        // Remove references from all layers
+        for (auto& layer : layers) {
+            auto& ids = layer.primitiveIDs;
+            ids.erase(std::remove(ids.begin(), ids.end(), id), ids.end());
+        }
+
+        primitives.erase(it);
+        PrimIDManager::remove_id(id);
+        return true;
+    }
+
+
 
     // Primitive insertion helpers
     //Adds a primitive to the project and also appends it to the default layer's draw order
@@ -48,7 +77,6 @@ public:
         const uint32_t id = p->getID();
         primitives[id] = std::move(p);
         layers[0].primitiveIDs.push_back(id);
-        modifiedUtc = createdUtc; //placeholder, we'll set real timestamps later
         return id;
     }
 
@@ -58,6 +86,5 @@ public:
     }
 
 private:
-    uint32_t nextPrimitiveID_ = 1;
     uint32_t nextLayerID_ = 1;
 };

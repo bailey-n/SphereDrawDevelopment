@@ -1,4 +1,5 @@
 #include "test_primitive/test_primitive_id_mgr.h"
+#include "test_project/test_json_roundtrip.h"
 #include "timer.h"
 #include <iostream>
 #include <vector>
@@ -6,6 +7,7 @@
 int main() {
     std::vector<bool(*)()> test_functions = {
             test_id_funcs,
+            test_json_roundtrip,
     };
     unsigned int tests_passed = 0;
     for (int i = 0; i < test_functions.size(); i++) {
