@@ -20,6 +20,33 @@ void Cubemap::remove_element_from_parent_layer(CubeMapId cmap_id) {
     }
 }
 
+void Cubemap::recursive_layer_insert(CubeMapId cmap_id, CubeMapId layer, uint32_t position) {
+    // TODO: Change to support recursive layer insertion
+    if (position == -1) {
+        if (layer == InvalidId) draw_order.emplace_back(cmap_id);
+        else {
+            position = get_global_object_render_position(layer_map.at(layer).end_id) + 1;
+            layer_map.at(layer).end_id = cmap_id;
+            draw_order.insert(draw_order.begin() + position, cmap_id);
+        }
+    }
+    else {
+        if (layer == InvalidId) {
+            draw_order.insert(draw_order.begin() + position, cmap_id);
+        }
+        else {
+            auto global_position = get_global_object_render_position(layer) + 1 + position;
+            if (position == layer_size(layer_map.at(layer))) { layer_map.at(layer).end_id = cmap_id; }
+            draw_order.insert(draw_order.begin() + global_position, cmap_id);
+        }
+    }
+}
+
+void Cubemap::clamp_position(CubeMapId layer, uint32_t &position) {
+    if (layer == InvalidId) { position = std::min(position, (uint32_t)draw_order.size()); }
+    else { position = std::min(position, layer_size(layer_map.at(layer))); }
+}
+
 void Cubemap::reset() {
     for (auto& face: cube_faces) face.reset();
     draw_order.clear();
@@ -133,9 +160,7 @@ uint32_t Cubemap::get_local_object_render_position(CubeMapId cmap_id) const {
 CubeMapId Cubemap::add_new_point(const PointPrimitive &point, CubeMapId layer, uint32_t position) {
     // Ensure layer exists
     if (layer != InvalidId && !primitive_map.contains(layer)) return InvalidId;
-    // Clamp position
-    if (layer == InvalidId) { position = std::min(position, (uint32_t)draw_order.size()); }
-    else { position = std::min(position, layer_size(layer_map.at(layer))); }
+    clamp_position(layer, position);
 
     CubeFaceNum face = get_face(point.p);
 
@@ -156,26 +181,7 @@ CubeMapId Cubemap::add_new_point(const PointPrimitive &point, CubeMapId layer, u
     // Add point
     primitive_map.try_emplace(render_id, renderPoint, render_id, layer, flags);
     cube_faces[face].add_new_point_primitive(render_id, point);
-
-    // TODO: Change to support recursive layer insertion
-    if (position == -1) {
-        if (layer == InvalidId) draw_order.emplace_back(render_id);
-        else {
-            position = get_global_object_render_position(layer_map.at(layer).end_id) + 1;
-            layer_map.at(layer).end_id = render_id;
-            draw_order.insert(draw_order.begin() + position, render_id);
-        }
-    }
-    else {
-        if (layer == InvalidId) {
-            draw_order.insert(draw_order.begin() + position, render_id);
-        }
-        else {
-            auto global_position = get_global_object_render_position(layer) + 1 + position;
-            if (position == layer_size(layer_map.at(layer))) { layer_map.at(layer).end_id = render_id; }
-            draw_order.insert(draw_order.begin() + global_position, render_id);
-        }
-    }
+    recursive_layer_insert(render_id, layer, position);
 
     return render_id;
 }
@@ -199,4 +205,11 @@ bool Cubemap::remove_point(CubeMapId cmap_id) {
     remove_id(cmap_id);
 
     return true;
+}
+
+CubeMapId Cubemap::add_new_line(const PolylinePrimitive& line, CubeMapId layer, uint32_t position) {
+    if (layer != InvalidId && !primitive_map.contains(layer)) return InvalidId;
+    clamp_position(layer, position);
+
+
 }

@@ -38,6 +38,8 @@ class Cubemap {
 
     [[nodiscard]] uint32_t layer_size(const LayerPrimitiveInfo& info) const;
     void remove_element_from_parent_layer(CubeMapId cmap_id);
+    void recursive_layer_insert(CubeMapId cmap_id, CubeMapId layer, uint32_t position);
+    void clamp_position(CubeMapId layer, uint32_t& position);
 
 public:
     void draw(const Camera& camera) const;
