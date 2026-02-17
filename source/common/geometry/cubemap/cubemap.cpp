@@ -181,7 +181,7 @@ CubeMapId Cubemap::add_new_point(const PointPrimitive &point, CubeMapId layer, u
 }
 
 bool Cubemap::remove_point(CubeMapId cmap_id) {
-    if (active_ids.contains(cmap_id)) return false;
+    if (!active_ids.contains(cmap_id)) return false;
     auto& info = primitive_map.at(cmap_id);
     if (info.type != ObjectType::renderPoint) return false;
     auto flags = info.face_flags;
@@ -197,4 +197,6 @@ bool Cubemap::remove_point(CubeMapId cmap_id) {
     draw_order.erase(draw_order.begin()+get_global_object_render_position(cmap_id));
     primitive_map.erase(cmap_id);
     remove_id(cmap_id);
+
+    return true;
 }
