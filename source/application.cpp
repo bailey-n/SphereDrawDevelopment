@@ -172,17 +172,17 @@ void Application::mouseButtonCallback(GLFWwindow *win, int button, int action, i
 // APPLICATION MAINLOOP
 void Application::mainloop() {
     // FOR TESTING SPEED & STABILITY
-    PointPrimitive test_point(0);
-    std::random_device rd;
-    std::default_random_engine rng(rd());
-    std::uniform_real_distribution<float> long_dist(-M_PI, M_PI);
-    std::uniform_real_distribution<float> lat_dist(-M_PI/2.0, M_PI/2.0);
-    std::uniform_real_distribution<float> color_dist(0.0f, 1.0f);
-    for (int i = 0; i < 500; i++) {
-        test_point.p = lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f);
-        test_point.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
-        renderer.add_new_point(test_point);
-    }
+//    PointPrimitive test_point(0);
+//    std::random_device rd;
+//    std::default_random_engine rng(rd());
+//    std::uniform_real_distribution<float> long_dist(-M_PI, M_PI);
+//    std::uniform_real_distribution<float> lat_dist(-M_PI/2.0, M_PI/2.0);
+//    std::uniform_real_distribution<float> color_dist(0.0f, 1.0f);
+//    for (int i = 0; i < 500; i++) {
+//        test_point.p = lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f);
+//        test_point.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
+//        renderer.add_new_point(test_point);
+//    }
     // END TEST
 
     constexpr double rotations_per_second = 0.5;
