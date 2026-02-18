@@ -3,6 +3,7 @@
 #include <thread>
 #include <cmath>
 #include <filesystem>
+#include <nfd.h>
 
 // ################################################## //
 
@@ -36,6 +37,7 @@ const int Application::w_height = 900;
 GLFWwindow* Application::window = nullptr;
 bool Application::initialized = false;
 bool Application::gui_change = true;
+bool Application::nfd_initialized = false;
 std::deque<AppAction> Application::event_queue = {};
 std::map<std::pair<int, int>, AppAction> Application::press_key_actions = {};
 std::map<std::pair<int, int>, AppAction> Application::release_key_actions = {};
@@ -48,6 +50,11 @@ bool Application::init() {
     setup_key_bindings();
     shaderManager::set_shader_root_directory("shaders/");
     init_imgui();
+    // Initialize NFD (not fatal if it fails)
+    nfd_initialized = (NFD_Init() == NFD_OKAY);
+    if (!nfd_initialized) {
+        std::cerr << "NFD_Init failed: " << NFD_GetError() << "\n";
+    }
     initialized = true;
     return initialized;
 }
@@ -156,6 +163,10 @@ camera({2.0f, 0.0f, 0.0f},
 }
 
 Application::~Application() {
+    if (nfd_initialized) {
+        NFD_Quit();
+        nfd_initialized = false;
+    }
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
@@ -410,20 +421,29 @@ void Application::render_frame() {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     // // ImGui::ShowDemoWindow();
-    ProjectMenuAction action = app_gui.DrawMainMenuBar(project_filepath);
+    ProjectMenuResult menu = app_gui.DrawMainMenuBar(project_filepath);
+    if (!menu.errorMessage.empty()) {
+        project_status = menu.errorMessage;
+        show_project_status = true;
+    }
+    ProjectMenuAction action = menu.action;
+
 
     try {
         if (action == ProjectMenuAction::NewProject) {
-            // Reset project in memory
+            // If user cancelled dialog, do nothing.
+            if (project_filepath.empty()) {
+                throw std::runtime_error("New project cancelled (no file selected).");
+            }
+
+            // Reset + save blank project to the chosen path
             project = Project();
 
-            // Always generate a new unique file name on New
-            std::filesystem::path dir("project_files/out");
-            std::filesystem::create_directories(dir);
+            std::filesystem::path p(project_filepath);
+            if (p.has_parent_path()) {
+                std::filesystem::create_directories(p.parent_path());
+            }
 
-            project_filepath = (dir / make_timestamped_project_name()).string();
-
-            // Create the blank file immediately
             SaveProjectToFile(project, project_filepath);
 
             project_status = "New project created and saved to:\n" + project_filepath;
@@ -431,7 +451,7 @@ void Application::render_frame() {
         }
         else if (action == ProjectMenuAction::SaveProject) {
             if (project_filepath.empty()) {
-                throw std::runtime_error("No project file path set. Enter a file path in Project menu.");
+                throw std::runtime_error("No project file path set. Use Project > Save to choose a file.");
             }
 
             std::filesystem::path p(project_filepath);
@@ -446,7 +466,7 @@ void Application::render_frame() {
         }
         else if (action == ProjectMenuAction::LoadProject) {
             if (project_filepath.empty()) {
-                throw std::runtime_error("No project file path set. Enter a file path in Project menu.");
+                throw std::runtime_error("Load cancelled (no file selected).");
             }
 
             if (!std::filesystem::exists(project_filepath)) {
@@ -463,6 +483,7 @@ void Application::render_frame() {
         project_status = std::string("Project I/O error:\n") + e.what();
         show_project_status = true;
     }
+
 
     // Status window (closable)
     app_gui.DrawStatusWindow(&show_project_status, project_status);

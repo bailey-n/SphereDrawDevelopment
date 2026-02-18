@@ -62,6 +62,4 @@ void Cubemap::remove_id(CubeMapId id) {
     deactivated_ids.insert(curr, id);
 }
 
-CubeMapId Cubemap::add_new_point(const SpherePoint& point) {
-
-}
+//CubeMapId Cubemap::add_new_point(const SpherePoint& point) {}
