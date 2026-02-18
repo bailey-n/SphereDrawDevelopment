@@ -28,6 +28,7 @@ class Application {
     const static int w_height;
     static GLFWwindow* window;
     static bool initialized;
+    static bool nfd_initialized;
     static bool gui_change;
     static std::deque<AppAction> event_queue;
     // Maps key, modifier bits to an associated shortcut action
