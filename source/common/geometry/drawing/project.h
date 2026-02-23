@@ -10,6 +10,8 @@
 #include "primitive.h"
 #include "layer.h"
 #include "primitive_id_manager.h"
+#include "cubemap/cubemap.h"
+
 
 // Represents a SphereDraw document in memory
 class Project {
@@ -77,6 +79,17 @@ public:
         const uint32_t id = p->getID();
         primitives[id] = std::move(p);
         layers[0].primitiveIDs.push_back(id);
+
+        //makes point additions appear immediately
+        if (cubemap_) {
+            Primitive* base = primitives[id].get();
+            if (base && base->getType() == PrimitiveType::Point) {
+                if (auto* pt = dynamic_cast<PointPrimitive*>(base)) {
+                    cubemap_->add_new_point(*pt);
+                }
+            }
+        }
+
         return id;
     }
 
@@ -85,6 +98,44 @@ public:
         primitives[p->getID()] = std::move(p);
     }
 
+    // CUBEMAP HELPERS
+
+    // Attach a renderer (non-owning). Project does NOT manage this lifetime.
+    void attachCubemap(Cubemap* cubemap) { cubemap_ = cubemap; }
+
+    Cubemap* getCubemap() const { return cubemap_; }
+
+    // Rebuild render-side cubemap from current in-memory project data.
+    // First milestone: points only (lines/polygons can be added later).
+    void rebuildAttachedCubemapFromProject() {
+        if (!cubemap_) return;
+
+        cubemap_->reset();
+
+        // Render in layer order, then primitive order within each layer
+        for (const auto& layer : layers) {
+            // Respect visibility for rendering
+            if (!layer.visible) continue;
+
+            for (uint32_t pid : layer.primitiveIDs) {
+                auto it = primitives.find(pid);
+                if (it == primitives.end() || !it->second) continue;
+
+                Primitive* base = it->second.get();
+                if (base->getType() == PrimitiveType::Point) {
+                    auto* pt = dynamic_cast<PointPrimitive*>(base);
+                    if (pt) {
+                        cubemap_->add_new_point(*pt);
+                    }
+                }
+
+                // TODO (next milestones): Polyline / Polygon / render-layer mapping
+            }
+        }
+    }
+
+
 private:
     uint32_t nextLayerID_ = 1;
+    Cubemap* cubemap_ = nullptr; // non-owning pointer to the active renderer-side cubemap
 };

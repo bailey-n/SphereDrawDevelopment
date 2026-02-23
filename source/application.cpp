@@ -10,29 +10,6 @@
 
 // ################################################## //
 
-//Helper function for creating unique JSON filenames (timestamped)
-static std::string make_timestamped_project_name() {
-    using namespace std::chrono;
-
-    auto now = system_clock::now();
-    auto t = system_clock::to_time_t(now);
-
-    std::tm tm{};
-#ifdef _WIN32
-    localtime_s(&tm, &t);
-#else
-    localtime_r(&t, &tm);
-#endif
-
-    char buf[64];
-    std::snprintf(buf, sizeof(buf),
-            "project_%04d-%02d-%02d_%02d-%02d-%02d.json",
-            tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
-            tm.tm_hour, tm.tm_min, tm.tm_sec);
-
-    return std::string(buf);
-}
-
 
 // Static variable initialization
 const int Application::w_width = 1200;
@@ -164,6 +141,10 @@ camera({2.0f, 0.0f, 0.0f},
        glm::perspective(glm::radians(60.0f), 4.0f / 3.0f, 0.1f, 100.0f)
        ){
     if (!initialized) return;
+    // connect project memory -> render cubemap pipeline
+    project.attachCubemap(&renderer);
+    // ensure renderer matches current project state on startup
+    project.rebuildAttachedCubemapFromProject();
 }
 
 Application::~Application() {
@@ -469,6 +450,9 @@ void Application::render_frame() {
 
             // Reset + save blank project to the chosen path
             project = Project();
+            //connect to pipeline
+            project.attachCubemap(&renderer);
+            project.rebuildAttachedCubemapFromProject(); // clears renderer to match blank project
 
             std::filesystem::path p(project_filepath);
             if (p.has_parent_path()) {
@@ -505,6 +489,9 @@ void Application::render_frame() {
             }
 
             project = LoadProjectFromFile(project_filepath);
+            // connect to pipeline
+            project.attachCubemap(&renderer);
+            project.rebuildAttachedCubemapFromProject();
 
             project_status = "Loaded project from:\n" + project_filepath;
             show_project_status = true;
