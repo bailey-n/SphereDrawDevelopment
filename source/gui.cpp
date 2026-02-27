@@ -14,8 +14,13 @@ static std::string ensure_json_extension(const std::string& path) {
     return path + ".json";
 }
 
-ProjectMenuResult SphereDrawGUI::DrawMainMenuBar(std::string& filepath) {
-    ProjectMenuResult result;
+// Treat this as the "unsafe default" dev path - Save should prompt the user instead.
+static bool is_default_startup_project_path(const std::string& path) {
+    return path == "project_files/out/project.json";
+}
+
+MainMenuResult SphereDrawGUI::DrawMainMenuBar(std::string& filepath) {
+    MainMenuResult result;
 
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("Project")) {
@@ -46,7 +51,7 @@ ProjectMenuResult SphereDrawGUI::DrawMainMenuBar(std::string& filepath) {
                 nfdresult_t r = NFD_SaveDialog(&outPath, filters, 1, nullptr, "project.json");
 
                 if (r == NFD_OKAY && outPath) {
-                    result.action = ProjectMenuAction::NewProject;
+                    result.projectAction = ProjectMenuAction::NewProject;
                     result.chosenPath = ensure_json_extension(outPath);
                     filepath = result.chosenPath;
                     std::snprintf(fileBuf, sizeof(fileBuf), "%s", filepath.c_str());
@@ -55,20 +60,22 @@ ProjectMenuResult SphereDrawGUI::DrawMainMenuBar(std::string& filepath) {
                     result.errorMessage = std::string("File dialog error: ") +
                                           (NFD_GetError() ? NFD_GetError() : "Unknown error");
                 }
-                // if CANCEL: do nothing (action stays None)
+                // if CANCEL: do nothing
             }
 
+            // ---------- Save (CTRL+S) ----------
+            // If filepath is empty OR still on the default dev path, prompt user (Save As behavior).
             if (ImGui::MenuItem("Save", "CTRL+S")) {
-                // If we already have a filepath, we can save immediately.
-                // If not, do Save As dialog.
-                if (!filepath.empty()) {
-                    result.action = ProjectMenuAction::SaveProject;
+                if (!filepath.empty() && !is_default_startup_project_path(filepath)) {
+                    // Normal Save to existing user-chosen file
+                    result.projectAction = ProjectMenuAction::SaveProject;
                 } else {
+                    // First-time save (or still default path) -> prompt user
                     nfdchar_t* outPath = nullptr;
                     nfdresult_t r = NFD_SaveDialog(&outPath, filters, 1, nullptr, "project.json");
 
                     if (r == NFD_OKAY && outPath) {
-                        result.action = ProjectMenuAction::SaveProject;
+                        result.projectAction = ProjectMenuAction::SaveProject; // still handled as SaveProject
                         result.chosenPath = ensure_json_extension(outPath);
                         filepath = result.chosenPath;
                         std::snprintf(fileBuf, sizeof(fileBuf), "%s", filepath.c_str());
@@ -77,8 +84,28 @@ ProjectMenuResult SphereDrawGUI::DrawMainMenuBar(std::string& filepath) {
                         result.errorMessage = std::string("File dialog error: ") +
                                               (NFD_GetError() ? NFD_GetError() : "Unknown error");
                     }
-                    // if CANCEL: do nothing (action stays None)
+                    // if CANCEL: do nothing
                 }
+            }
+
+            // ---------- Save As... ----------
+            // Always prompt for a path, even if already saved.
+            if (ImGui::MenuItem("Save As...")) {
+                nfdchar_t* outPath = nullptr;
+                nfdresult_t r = NFD_SaveDialog(&outPath, filters, 1, nullptr, "project.json");
+
+                if (r == NFD_OKAY && outPath) {
+                    // We'll still use SaveProject in Application, but pass chosenPath so it updates filepath.
+                    result.projectAction = ProjectMenuAction::SaveProject;
+                    result.chosenPath = ensure_json_extension(outPath);
+                    filepath = result.chosenPath;
+                    std::snprintf(fileBuf, sizeof(fileBuf), "%s", filepath.c_str());
+                    NFD_FreePath(outPath);
+                } else if (r == NFD_ERROR) {
+                    result.errorMessage = std::string("File dialog error: ") +
+                                          (NFD_GetError() ? NFD_GetError() : "Unknown error");
+                }
+                // if CANCEL: do nothing
             }
 
             if (ImGui::MenuItem("Load", "CTRL+O")) {
@@ -86,7 +113,7 @@ ProjectMenuResult SphereDrawGUI::DrawMainMenuBar(std::string& filepath) {
                 nfdresult_t r = NFD_OpenDialog(&outPath, filters, 1, nullptr);
 
                 if (r == NFD_OKAY && outPath) {
-                    result.action = ProjectMenuAction::LoadProject;
+                    result.projectAction = ProjectMenuAction::LoadProject;
                     result.chosenPath = outPath;
                     filepath = result.chosenPath;
                     std::snprintf(fileBuf, sizeof(fileBuf), "%s", filepath.c_str());
@@ -95,10 +122,23 @@ ProjectMenuResult SphereDrawGUI::DrawMainMenuBar(std::string& filepath) {
                     result.errorMessage = std::string("File dialog error: ") +
                                           (NFD_GetError() ? NFD_GetError() : "Unknown error");
                 }
-                // if CANCEL: do nothing (action stays None)
+                // if CANCEL: do nothing
             }
 
+            ImGui::EndMenu();
+        }
 
+        // Draw dropdown
+        if (ImGui::BeginMenu("Draw")) {
+            if (ImGui::MenuItem("Point")) {
+                result.drawAction = DrawMenuAction::SelectPoint;
+            }
+            if (ImGui::MenuItem("Polyline")) {
+                result.drawAction = DrawMenuAction::SelectPolyline;
+            }
+            if (ImGui::MenuItem("Polygon")) {
+                result.drawAction = DrawMenuAction::SelectPolygon;
+            }
             ImGui::EndMenu();
         }
 

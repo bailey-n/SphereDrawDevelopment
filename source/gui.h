@@ -14,9 +14,17 @@ enum class ProjectMenuAction {
     LoadProject
 };
 
+enum class DrawMenuAction {
+    None,
+    SelectPoint,
+    SelectPolyline,
+    SelectPolygon
+};
+
 // Result from the menu bar: what action + (optional) chosen path from file dialog
-struct ProjectMenuResult {
-    ProjectMenuAction action = ProjectMenuAction::None;
+struct MainMenuResult {
+    ProjectMenuAction projectAction = ProjectMenuAction::None;
+    DrawMenuAction drawAction = DrawMenuAction::None;
     std::string chosenPath;  // empty if user cancelled or no dialog used
     std::string errorMessage;
 };
@@ -26,7 +34,7 @@ public:
     SphereDrawGUI() = default;
 
     // Draws the top menu bar and returns what the user clicked + any chosen filepath
-    ProjectMenuResult DrawMainMenuBar(std::string& filepath);
+    MainMenuResult DrawMainMenuBar(std::string& filepath);
 
     // Optional status window for feedback + screenshots
     void DrawStatusWindow(bool* open, const std::string& status);
