@@ -20,7 +20,7 @@ public:
     void reset();
     void add_new_point_primitive(CubeMapId id, const PointPrimitive& point_data);
     void remove_point_primitive(CubeMapId id);
-    void add_new_line_primitive(CubeMapId id, const std::vector<LineBuilderVertexInfo>& line_builder_info);
+    void add_new_line_primitive(CubeMapId id, const PolylinePrimitive& line_data, const std::vector<LineBuilderVertexInfo>& line_builder_info);
     void remove_line_primitive(CubeMapId id);
     void draw(CubeMapId id, ObjectType type, const Camera& camera) const;
 };

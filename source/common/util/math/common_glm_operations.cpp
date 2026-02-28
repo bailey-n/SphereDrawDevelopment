@@ -4,7 +4,7 @@
 
 #include "common_glm_operations.h"
 
-glm::vec4 make_vec4_w1(const glm::vec3& base) {
+glm::vec4 make_vec4_w1(const glm::tvec3<float>& base) {
     return glm::vec4(base, 1.0f);
 }
 

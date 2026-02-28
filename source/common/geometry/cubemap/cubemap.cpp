@@ -212,6 +212,10 @@ CubeMapId Cubemap::add_new_line(const PolylinePrimitive& line, CubeMapId layer, 
     if (layer != InvalidId && !primitive_map.contains(layer)) return InvalidId;
     clamp_position(layer, position);
 
+    CubeMapId render_id = activate_new_id();
+    if (render_id == InvalidId) return InvalidId;
+    CubeFaceFlags flags = 0;
+
     // Get info relevant to renderer for each vertex
     std::vector<LineBuilderVertexInfo> build_info;
     for (int i = 0; i < line.verts.size(); i++) {
@@ -236,5 +240,19 @@ CubeMapId Cubemap::add_new_line(const PolylinePrimitive& line, CubeMapId layer, 
         line_ranges.back().emplace_back(build_info[i]);
     }
 
-
+    for (const auto& subline: line_ranges) {
+        auto face = subline[0].face;
+        switch (face) {
+            case North: flags |= flagNorth; break;
+            case West: flags |= flagWest; break;
+            case Meridian: flags |= flagMeridian; break;
+            case East: flags |= flagEast; break;
+            case AntiMeridian: flags |= flagAntiMeridian; break;
+            case South: flags |= flagSouth; break;
+        }
+        cube_faces[face].add_new_line_primitive(render_id, line, subline);
+    }
+    primitive_map.try_emplace(render_id, renderLine, render_id, layer, flags);
+    recursive_layer_insert(render_id, layer, position);
+    return render_id;
 }

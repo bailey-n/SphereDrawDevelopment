@@ -15,6 +15,5 @@ glm::vec3 sphere_click_xyz(const glm::vec3& position, const glm::vec3& up, float
 std::pair<float, float> sphere_click_lat_lon(const glm::vec3& position, const glm::vec3& up, float sphere_radius,
                                              const glm::vec2& screen_coords, float window_width, float window_height,
                                              float fov_y);
-inline glm::vec3 slerp(const glm::vec3& u, const glm::vec3& v, float t);
 
 #endif //SHAPES_H

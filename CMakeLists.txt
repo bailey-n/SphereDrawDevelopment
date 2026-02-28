@@ -110,6 +110,8 @@ add_executable(SphereDraw
         source/common/geometry/meshes/line_mesh.cpp
         source/common/util/math/common_glm_operations.h
         source/common/util/math/common_glm_operations.cpp
+        source/common/util/math/vertex_manipulation.cpp
+        source/common/util/math/vertex_manipulation.h
 
         # NEW INCLUDES (Organize later)
 )

@@ -50,7 +50,7 @@ public:
 
     std::vector<glm::vec3> verts;
     glm::vec4 color {1.f, 1.f, 1.f, 1.f};
-    float width = 2.0f;
+    float width = 0.007f;
     bool closed = false; // optional, default false, ask Nathan if he thinks we need this later
 };
 

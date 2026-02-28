@@ -109,8 +109,8 @@ void Application::set_gl_preferences() {
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
-    glDisable(GL_CULL_FACE);
-    // glEnable(GL_CULL_FACE);
+    // glDisable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
     glPointSize(10.0f);
     glLineWidth(4.0f);
 }
@@ -198,30 +198,37 @@ void Application::mouseButtonCallback(GLFWwindow *win, int button, int action, i
 // APPLICATION MAINLOOP
 void Application::mainloop() {
     // FOR TESTING SPEED & STABILITY
-//    PointPrimitive test_point(0);
-//    std::random_device rd;
-//    std::default_random_engine rng(rd());
-//    std::uniform_real_distribution<float> long_dist(-M_PI, M_PI);
-//    std::uniform_real_distribution<float> lat_dist(-M_PI/2.0, M_PI/2.0);
-//    std::uniform_real_distribution<float> color_dist(0.0f, 1.0f);
-//    std::vector<CubeMapId> ids;
-//    for (int i = 0; i < 500; i++) {
-//        test_point.p = lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f);
-//        test_point.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
-//        ids.emplace_back(renderer.add_new_point(test_point));
-//    }
-//    for (int i = 0; i < 500; i++) {
-//        std::shuffle(ids.begin(), ids.end(), rng);
-//        for (auto id: ids) {
-//            renderer.remove_point(id);
-//        }
-//    }
-//    for (int i = 0; i < 250; i++) {
-//        test_point.p = lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f);
-//        test_point.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
-//        ids.emplace_back(renderer.add_new_point(test_point));
-//    }
-//    renderer.reset();
+    PointPrimitive test_point(0);
+    PolylinePrimitive test_line(0);
+    std::random_device rd;
+    std::default_random_engine rng(rd());
+    std::uniform_real_distribution<float> long_dist(-M_PI, M_PI);
+    std::uniform_real_distribution<float> lat_dist(-M_PI/2.0, M_PI/2.0);
+    std::uniform_real_distribution<float> color_dist(0.0f, 1.0f);
+    std::vector<CubeMapId> ids;
+    // for (int i = 0; i < 500; i++) {
+    //     test_point.p = lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f);
+    //     test_point.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
+    //     ids.emplace_back(renderer.add_new_point(test_point));
+    // }
+    // for (int i = 0; i < 500; i++) {
+    //     std::shuffle(ids.begin(), ids.end(), rng);
+    //     for (auto id: ids) {
+    //         renderer.remove_point(id);
+    //     }
+    // }
+    // for (int i = 0; i < 250; i++) {
+    //     test_point.p = lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f);
+    //     test_point.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
+    //     ids.emplace_back(renderer.add_new_point(test_point));
+    // }
+    for (int i = 0; i < 50; i++) {
+        test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
+        test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
+        test_line.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
+        ids.emplace_back(renderer.add_new_line(test_line));
+    }
+    // renderer.reset();
     // END TEST
 
     constexpr double rotations_per_second = 0.5;
