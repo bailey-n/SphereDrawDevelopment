@@ -106,6 +106,10 @@ add_executable(SphereDraw
         source/common/geometry/cubemap/cubeface.h
         source/common/geometry/cubemap/cubeface.cpp
         source/common/geometry/cubemap/cubemap_util.cpp
+        source/common/geometry/meshes/line_mesh.h
+        source/common/geometry/meshes/line_mesh.cpp
+        source/common/util/math/common_glm_operations.h
+        source/common/util/math/common_glm_operations.cpp
 
         # NEW INCLUDES (Organize later)
 )

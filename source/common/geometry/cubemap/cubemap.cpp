@@ -3,6 +3,7 @@
 //
 
 #include "cubemap.h"
+#include <map>
 #include <iostream>
 
 uint32_t Cubemap::layer_size(const LayerPrimitiveInfo &info) const {
@@ -210,6 +211,30 @@ bool Cubemap::remove_point(CubeMapId cmap_id) {
 CubeMapId Cubemap::add_new_line(const PolylinePrimitive& line, CubeMapId layer, uint32_t position) {
     if (layer != InvalidId && !primitive_map.contains(layer)) return InvalidId;
     clamp_position(layer, position);
+
+    // Get info relevant to renderer for each vertex
+    std::vector<LineBuilderVertexInfo> build_info;
+    for (int i = 0; i < line.verts.size(); i++) {
+        auto& new_build_vtx = build_info.emplace_back(
+                LineBuilderVertexInfo::lvMiddle, line.verts[i], get_face(line.verts[i])
+                );
+        if (i == 0) new_build_vtx.ty = LineBuilderVertexInfo::lvStart;
+        else if (i == line.verts.size()-1) new_build_vtx.ty = LineBuilderVertexInfo::lvEnd;
+        if (i > 0) {
+            new_build_vtx.face_transition_before = build_info[i - 1].face != new_build_vtx.face;
+            build_info[i-1].face_transition_after = new_build_vtx.face_transition_before;
+        }
+    }
+
+    // Split ranges by continuity on face
+    std::vector<std::vector<LineBuilderVertexInfo>> line_ranges;
+    line_ranges.emplace_back();
+    for (int i = 0; i < build_info.size(); i++) {
+        if (build_info[i].face_transition_before) {
+            line_ranges.emplace_back();
+        }
+        line_ranges.back().emplace_back(build_info[i]);
+    }
 
 
 }

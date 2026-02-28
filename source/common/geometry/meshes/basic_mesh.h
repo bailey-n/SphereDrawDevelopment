@@ -33,6 +33,7 @@ struct BasicMesh {
     void set_indices(const std::vector<glm::u32vec3>& new_indices);
     void new_data(const std::vector<glm::vec3>& new_positions, const std::vector<glm::vec4>& new_colors, const std::vector<glm::u32vec3>& indices);
     void update_all();
+    bool renderable() const;
 };
 
 

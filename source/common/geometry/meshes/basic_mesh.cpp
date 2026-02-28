@@ -59,3 +59,7 @@ void BasicMesh::update_all() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }
+
+bool BasicMesh::renderable() const {
+    return indices.size() >= 3;
+}

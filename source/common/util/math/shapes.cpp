@@ -186,3 +186,8 @@ std::pair<float, float> sphere_click_lat_lon(const glm::vec3& position, const gl
     if (std::isnan(res.x)) return {std::nanf(""), std::nanf("")};
     return xyz_to_lat_lon(res);
 }
+
+glm::vec3 slerp(const glm::vec3& u, const glm::vec3& v, float t) {
+    const float angle = std::acos(glm::dot(u, v));
+    return ((std::sin((1.0f-t)*angle) * u) + (std::sin(t*angle) * v) / std::sin(angle));
+}

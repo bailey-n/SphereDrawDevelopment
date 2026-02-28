@@ -56,6 +56,20 @@ struct LayerPrimitiveInfo {
     CubeMapId end_id;
 };
 
+struct LineBuilderVertexInfo {
+    enum lvType {
+        lvStart = 0,
+        lvMiddle = 1,
+        lvEnd = 2
+    };
+
+    lvType ty;
+    glm::vec3 pos;
+    CubeFaceNum face;
+    bool face_transition_before = false;
+    bool face_transition_after = false;
+};
+
 CubeFaceNum get_face(const glm::vec3& position);
 
 #endif //SPHEREDRAW_CUBEMAP_UTIL_H
