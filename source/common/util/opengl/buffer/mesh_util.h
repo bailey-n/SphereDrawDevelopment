@@ -61,4 +61,6 @@ GLuint gen_texture_2d(GLint fmt, GLsizei width, GLsizei height, void* tex_data);
 GLuint gen_texture_2d_rgba(GLsizei width, GLsizei height, void* tex_data);
 GLuint gen_texture_2d_rgb(GLsizei width, GLsizei height, void* tex_data);
 
+GLuint gen_fb_and_bind();
+
 #endif MESH_UTIL_H

@@ -109,8 +109,8 @@ void Application::set_gl_preferences() {
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
-    // glDisable(GL_CULL_FACE);
-    glEnable(GL_CULL_FACE);
+    glDisable(GL_CULL_FACE);
+    // glEnable(GL_CULL_FACE);
     glPointSize(10.0f);
     glLineWidth(4.0f);
 }
@@ -222,14 +222,15 @@ void Application::mainloop() {
     //     test_point.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
     //     ids.emplace_back(renderer.add_new_point(test_point));
     // }
-    for (int i = 0; i < 50; i++) {
-        test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
-        test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
-        test_line.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
-        ids.emplace_back(renderer.add_new_line(test_line));
-    }
+//    for (int i = 0; i < 50; i++) {
+//        test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
+//        test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
+//        test_line.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
+//        ids.emplace_back(renderer.add_new_line(test_line));
+//    }
     // renderer.reset();
     // END TEST
+    test_mesh.emplace();
 
     constexpr double rotations_per_second = 0.5;
     constexpr unsigned int FPS = 60;
@@ -509,8 +510,10 @@ void Application::render_frame() {
 
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    planet.draw(camera);
-    renderer.draw(camera);
+    glViewport(0, 0, w_width, w_height);
+    // planet.draw(camera);
+    test_mesh->draw(camera);
+    // renderer.draw(camera);
     draw_data = ImGui::GetDrawData();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(window);

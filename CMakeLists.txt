@@ -112,6 +112,12 @@ add_executable(SphereDraw
         source/common/util/math/common_glm_operations.cpp
         source/common/util/math/vertex_manipulation.cpp
         source/common/util/math/vertex_manipulation.h
+        source/common/geometry/meshes/cubeface_mesh.h
+        source/common/geometry/meshes/cubeface_mesh.cpp
+        source/common/util/opengl/buffer/texture_buffer.h
+        source/common/util/opengl/buffer/texture_buffer.cpp
+        source/common/util/opengl/buffer/frame_buffer.h
+        source/common/util/opengl/buffer/frame_buffer.cpp
 
         # NEW INCLUDES (Organize later)
 )

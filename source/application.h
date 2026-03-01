@@ -22,6 +22,7 @@
 #include "common/geometry/drawing/project_io.h"
 
 #include "cubemap.h"
+#include "cubeface_mesh.h"
 
 class Application {
     const static int w_width;
@@ -45,6 +46,8 @@ class Application {
     Camera camera;
     SphereDrawGUI app_gui;
     Cubemap renderer;
+
+    std::optional<CubeFaceMesh> test_mesh;
 
     // Project state (for Save/Load/New)
     Project project;
