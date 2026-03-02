@@ -8,6 +8,7 @@
 #include "texture_buffer.h"
 #include "element_buffer.h"
 #include "vertex_attribute.h"
+#include "basic_mesh.h"
 
 class CubeFaceMesh {
     static constexpr int WIDTH = 1024;
@@ -16,6 +17,7 @@ class CubeFaceMesh {
 
     GLuint VAO;
     GLuint frame_buffer;
+    GLuint render_buffer;
     vertexAttribute<0, glm::vec3> positions;
     vertexAttribute<1, glm::vec2> uvs;
     elementBuffer indices;
@@ -23,9 +25,12 @@ class CubeFaceMesh {
     glm::mat4x4 model;
     GLuint program;
 
+    BasicMesh _test_mesh;
+
 public:
     CubeFaceMesh();
     ~CubeFaceMesh();
+    void _test_render();
     void draw(const Camera& camera);
 };
 

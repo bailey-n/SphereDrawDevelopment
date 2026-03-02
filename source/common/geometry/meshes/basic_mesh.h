@@ -34,6 +34,8 @@ struct BasicMesh {
     void new_data(const std::vector<glm::vec3>& new_positions, const std::vector<glm::vec4>& new_colors, const std::vector<glm::u32vec3>& indices);
     void update_all();
     bool renderable() const;
+    void _ref_draw(const Camera& camera) const;
+    void draw_texture() const;
 };
 
 

@@ -3,6 +3,7 @@
 //
 
 #include "basic_mesh.h"
+#include "shader_manager.h"
 
 BasicMesh::BasicMesh() : VAO(gen_vao_and_bind()), positions({}), colors({}), indices({}), model(glm::mat4(1.0f)) {
     glBindVertexArray(0);
@@ -62,4 +63,32 @@ void BasicMesh::update_all() {
 
 bool BasicMesh::renderable() const {
     return indices.size() >= 3;
+}
+
+void BasicMesh::_ref_draw(const Camera& camera) const {
+    auto program = shaderManager::get_program({"pointVertexShader.glsl", "pointFragmentShader.glsl"});
+    if (program == static_cast<GLuint>(-1)) return;
+    glUseProgram(program);
+    if (!camera.bind(program, model)) return;
+
+    glBindVertexArray(VAO);
+    glDrawElements(GL_TRIANGLES, indices.count(),GL_UNSIGNED_INT, nullptr);
+    glBindVertexArray(0);
+}
+
+void BasicMesh::draw_texture() const {
+    auto program = shaderManager::get_program({"pointVertexShader.glsl", "pointFragmentShader.glsl"});
+    if (program == static_cast<GLuint>(-1)) return;
+    glUseProgram(program);
+
+    const GLint mvpID = glGetUniformLocation(program, "MVP");
+    if (mvpID != -1) {
+        glm::mat4 MVP = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.01f, 100.0f) *
+            glm::lookAt(glm::vec3{0.0f, 0.0f, -2.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
+        glUniformMatrix4fv(mvpID, 1, GL_FALSE, glm::value_ptr(MVP));
+    }
+
+    glBindVertexArray(VAO);
+    glDrawElements(GL_TRIANGLES, indices.count(),GL_UNSIGNED_INT, nullptr);
+    glBindVertexArray(0);
 }

@@ -231,6 +231,7 @@ void Application::mainloop() {
     // renderer.reset();
     // END TEST
     test_mesh.emplace();
+    test_mesh->_test_render();
 
     constexpr double rotations_per_second = 0.5;
     constexpr unsigned int FPS = 60;
