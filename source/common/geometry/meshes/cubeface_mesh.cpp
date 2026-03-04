@@ -124,7 +124,5 @@ void CubeFaceMesh::draw(const Camera &camera) {
 
     glDrawElements(GL_PATCHES, indices.count(),GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
-
-    // _test_mesh._ref_draw(camera);
 }
 

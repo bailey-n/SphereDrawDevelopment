@@ -10,11 +10,12 @@
 #include "line_mesh.h"
 #include "drawing/primitive.h"
 #include <map>
+#include "cubeface_mesh.h"
 
 class CubeFace {
+    CubeFaceMesh mesh;
     std::map<CubeMapId, PointMesh> point_meshes;
     std::map<CubeMapId, std::vector<LineMesh>> line_meshes;
-
 public:
     CubeFace();
     void reset();
