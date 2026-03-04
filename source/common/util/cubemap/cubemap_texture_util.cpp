@@ -121,3 +121,69 @@ void extend_cube_map_edges(unsigned char* data, unsigned int channels, unsigned 
     dst_data_idx = channels*dst_pixel;
     memcpy(data+dst_data_idx, data+src_data_idx, channels);
 }
+
+CubemapTextureMeshData get_full_cubemap_texture_mesh_data(CubeFaceNum face) {
+    /* North Face: [bl: (1, 1, 1)] [br: (1, 1, -1)] [tr: (-1, 1, -1)] [tl: (-1, 1, 1)]         <-> 7 6 2 3
+     * West Face: [bl: (-1, -1, 1)] [br: (1, -1, 1)] [tr: (1, 1, 1)] [tl: (-1, 1, 1)]         <-> 1 5 7 3
+     * Meridian Face: [bl: (1, -1, 1)] [br: (1, -1, -1)] [tr: (1, 1, -1)] [tl: (1, 1, 1)]         <-> 5 4 6 7
+     * East Face: [bl: (1, -1, -1)] [br: (-1, -1, -1)] [tr: (-1, 1, -1)] [tl: (1, 1, -1)]     <-> 4 0 2 6
+     * AntiMeridian Face: [bl: (-1, -1, -1)] [br: (-1, -1, 1)] [tr: (-1, 1, 1)] [tl: (-1, 1, -1)]     <-> 0 1 3 2
+     * South Face: [bl: (-1, -1, 1)] [br: (-1, -1, -1)] [tr: (1, -1, -1)] [tl: (1, -1, 1)]     <-> 1 0 4 5
+     */
+
+    constexpr float c = std::sqrt(1.0f / 3.0f);
+    glm::vec3 corners[8] = {
+        {-c, -c, -c},
+        {-c, -c, c},
+        {-c, c, -c},
+        {-c, c, c},
+        {c, -c, -c},
+        {c, -c, c},
+        {c, c, -c},
+        {c, c, c},
+        };
+    glm::vec2 uvs[4] = {
+        {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}
+    };
+    glm::u32vec3 indices[2] = {
+        {0, 1, 2}, {0, 2, 3}
+    };
+
+    switch (face) {
+    case North: return {
+        {corners[7], corners[6], corners[2], corners[3]},
+        {uvs[0], uvs[1], uvs[2], uvs[3]},
+            {indices[0], indices[1]}
+    };
+    case West: return {
+        {corners[1], corners[5], corners[7], corners[3]},
+        {uvs[0], uvs[1], uvs[2], uvs[3]},
+        {indices[0], indices[1]}
+    };
+    case Meridian: return {
+        {corners[5], corners[4], corners[6], corners[7]},
+        {uvs[0], uvs[1], uvs[2], uvs[3]},
+        {indices[0], indices[1]}
+    };
+    case East: return {
+        {corners[4], corners[0], corners[2], corners[6]},
+        {uvs[0], uvs[1], uvs[2], uvs[3]},
+        {indices[0], indices[1]}
+    };
+    case AntiMeridian: return {
+        {corners[0], corners[1], corners[3], corners[2]},
+        {uvs[0], uvs[1], uvs[2], uvs[3]},
+        {indices[0], indices[1]}
+    };
+    case South: return {
+        {corners[1], corners[0], corners[4], corners[5]},
+        {uvs[0], uvs[1], uvs[2], uvs[3]},
+        {indices[0], indices[1]}
+    };
+    }
+    return {
+        {glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f)},
+        {glm::vec2(0.0f), glm::vec2(0.0f), glm::vec2(0.0f), glm::vec2(0.0f)},
+        {glm::u32vec3(0), glm::u32vec3(0)}
+    };
+}

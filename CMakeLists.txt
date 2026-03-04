@@ -120,6 +120,8 @@ add_executable(SphereDraw
         source/common/util/opengl/buffer/frame_buffer.cpp
         source/common/geometry/meshes/drawn_mesh.cpp
         source/common/geometry/meshes/drawn_mesh.h
+        source/common/geometry/meshes/reference_texture_mesh.cpp
+        source/common/geometry/meshes/reference_texture_mesh.h
 
         # NEW INCLUDES (Organize later)
 )

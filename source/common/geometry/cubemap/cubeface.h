@@ -15,11 +15,14 @@
 #include "cubeface_mesh.h"
 #include "drawn_mesh.h"
 #include <optional>
+#include "reference_texture_mesh.h"
 
 class CubeFace {
     CubeFaceNum face;
 
     std::optional<CubeFaceMesh> mesh;
+    std::optional<ReferenceTextureMesh> reference_mesh;
+
     std::map<CubeMapId, DrawnMesh> drawn_meshes;
     std::queue<CubeMapId> draw_order;
 

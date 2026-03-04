@@ -12,4 +12,12 @@ unsigned long pixel_index(unsigned int x, unsigned int y, unsigned int width, un
 unsigned long channel_index(unsigned long pixel_index, unsigned int channel, unsigned int channels);
 void extend_cube_map_edges(unsigned char* data, unsigned int channels, unsigned int width, unsigned int height);
 
+struct CubemapTextureMeshData {
+    glm::vec3 vertices[4];
+    glm::vec2 uvs[4];
+    glm::u32vec3 indices[2];
+};
+
+CubemapTextureMeshData get_full_cubemap_texture_mesh_data(CubeFaceNum face);
+
 #endif //CUBEMAP_UTIL_H
