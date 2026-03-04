@@ -7,12 +7,13 @@
 #include "shapes.h"
 #include "common_glm_operations.h"
 #include "line_mesh.h"
+#include "drawn_mesh.h"
 
-CubeFaceMesh::CubeFaceMesh():
+CubeFaceMesh::CubeFaceMesh(CubeFaceNum face):
 VAO(gen_vao_and_bind()), frame_buffer(-1),
 positions({}), uvs({}), indices({}),
-texture(), model(1.0f), program(-1),
-_test_mesh() {
+texture(), model(1.0f), program(-1), face(face)
+/*_test_mesh()*/ {
     glBindVertexArray(VAO);
     program = shaderManager::get_program({
         "texturedSphereQuad.vert", "texturedSphereQuad.frag", "texturedSphereQuad.tesc", "texturedSphereQuad.tese"
@@ -20,7 +21,7 @@ _test_mesh() {
     // Generate texture
     auto data = rgba_white_square_1024();
     texture.regenerate_buffer(WIDTH, HEIGHT, data);
-    std::cout << texture.tex << std::endl;
+    // std::cout << texture.tex << std::endl;
 
     // Generate framebuffer
     frame_buffer = gen_fb_and_bind();
@@ -32,43 +33,44 @@ _test_mesh() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Mesh generation
-    auto mesh_data = generate_cuboid_face_mesh_data(2);
+    // auto mesh_data = generate_cuboid_face_mesh_data(2);
+    //
+    // std::vector<glm::vec3> _positions;
+    // for (int i = 0; i < 4; i++) { _positions.emplace_back(mesh_data.positions.at(i)); }
+    // std::vector<glm::vec2> _uvs = {
+    //     {1.0, 1.0},
+    //     {0.0, 1.0},
+    //     {1.0, 0.0},
+    //     {0.0, 0.0}
+    // };
+    // std::vector<glm::u32vec3> _indices;
+    // for (int i = 0; i < 2; i++) { _indices.emplace_back(mesh_data.indices.at(i)); }
 
-    std::vector<glm::vec3> _positions;
-    for (int i = 0; i < 4; i++) { _positions.emplace_back(mesh_data.positions.at(i)); }
-    std::vector<glm::vec2> _uvs = {
-        {1.0, 1.0},
-        {0.0, 1.0},
-        {1.0, 0.0},
-        {0.0, 0.0}
-    };
-    std::vector<glm::u32vec3> _indices;
-    for (int i = 0; i < 2; i++) { _indices.emplace_back(mesh_data.indices.at(i)); }
+    auto d_mesh = get_cube_face_mesh_data(face);
 
-    positions.re_buffer_data(_positions);
-    uvs.re_buffer_data(_uvs);
-
-    indices.re_buffer_data(_indices);
+    positions.re_buffer_data({d_mesh.vertices[0], d_mesh.vertices[1], d_mesh.vertices[2], d_mesh.vertices[3]});
+    uvs.re_buffer_data({d_mesh.uvs[0], d_mesh.uvs[1], d_mesh.uvs[2], d_mesh.uvs[3]});
+    indices.re_buffer_data({d_mesh.indices[0], d_mesh.indices[1]});
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glBindVertexArray(_test_mesh.VAO);
-    std::vector<glm::vec3> _test_positions = {
-        {0.4f, 0.4f, 0.0f},
-        {-0.6f, 0.4f, 0.0f},
-        {0.4f, -0.6f, 0.0f}
-    };
-    std::vector<glm::vec4> _test_colors = {
-        {1.0f, 0.0f, 0.0f, 1.0f},
-        {1.0f, 0.0f, 0.0f, 1.0f},
-        {1.0f, 0.0f, 0.0f, 1.0f}
-    };
-    std::vector<glm::u32vec3> _test_indices = {
-        {2, 1, 0}
-    };
-    _test_mesh.set_positions(_test_positions);
-    _test_mesh.set_colors(_test_colors);
-    _test_mesh.set_indices(_test_indices);
+    // glBindVertexArray(_test_mesh.VAO);
+    // std::vector<glm::vec3> _test_positions = {
+    //     {0.4f, 0.4f, 0.0f},
+    //     {-0.6f, 0.4f, 0.0f},
+    //     {0.4f, -0.6f, 0.0f}
+    // };
+    // std::vector<glm::vec4> _test_colors = {
+    //     {1.0f, 0.0f, 0.0f, 1.0f},
+    //     {1.0f, 0.0f, 0.0f, 1.0f},
+    //     {1.0f, 0.0f, 0.0f, 1.0f}
+    // };
+    // std::vector<glm::u32vec3> _test_indices = {
+    //     {2, 1, 0}
+    // };
+    // _test_mesh.set_positions(_test_positions);
+    // _test_mesh.set_colors(_test_colors);
+    // _test_mesh.set_indices(_test_indices);
     glBindVertexArray(0);
 }
 
@@ -78,26 +80,30 @@ CubeFaceMesh::~CubeFaceMesh() {
     glDeleteVertexArrays(1, &VAO);
 }
 
-void CubeFaceMesh::_test_render() {
+void CubeFaceMesh::update_texture(const std::vector<DrawnMesh*>& texture_meshes) const {
     glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
 
-    GLint textureId;
-    glGetFramebufferAttachmentParameteriv(
-        GL_FRAMEBUFFER,
-        GL_COLOR_ATTACHMENT0, // Or other attachment point
-        GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME,
-        &textureId
-    );
-    std::cout << textureId << std::endl;
+    // GLint textureId;
+    // glGetFramebufferAttachmentParameteriv(
+    //     GL_FRAMEBUFFER,
+    //     GL_COLOR_ATTACHMENT0, // Or other attachment point
+    //     GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME,
+    //     &textureId
+    // );
+    // std::cout << textureId << std::endl;
 
     glViewport(0, 0, texture.width, texture.height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    _test_mesh.draw_texture();
-
+    // _test_mesh.draw_texture();
+    for (auto mesh: texture_meshes) {
+        mesh->draw_texture();
+    }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void CubeFaceMesh::draw(const Camera &camera) {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
     if (program == static_cast<GLuint>(-1)) return;
     glUseProgram(program);
 

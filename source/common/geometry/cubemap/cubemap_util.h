@@ -139,7 +139,7 @@ inline glm::vec2 to_face_uv(glm::vec3 position, CubeFaceNum face) {
     case AntiMeridian: return {position.z, position.y};
     case South: return {-position.z, position.x};
     }
-    return {std::nanf, std::nanf};
+    return {std::nanf(""), std::nanf("")};
 }
 
 inline glm::vec3 to_face_uv_vec3(glm::vec3 position, CubeFaceNum face) {

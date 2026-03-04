@@ -6,6 +6,17 @@
 #include <map>
 #include <iostream>
 
+Cubemap::Cubemap() = default;
+
+void Cubemap::init() {
+    cube_faces[North].init(North);
+    cube_faces[West].init(West);
+    cube_faces[Meridian].init(Meridian);
+    cube_faces[East].init(East);
+    cube_faces[AntiMeridian].init(AntiMeridian);
+    cube_faces[South].init(South);
+}
+
 uint32_t Cubemap::layer_size(const LayerPrimitiveInfo &info) const {
     uint32_t layer_pos = get_global_object_render_position(info.id);
     uint32_t last_pos = get_global_object_render_position(info.end_id);
@@ -117,17 +128,20 @@ void Cubemap::remove_id(CubeMapId id) {
     deactivated_ids.insert(curr, id);
 }
 
-void Cubemap::draw(const Camera &camera) const {
+void Cubemap::draw(const Camera &camera) {
     for (const auto id: draw_order) {
         const auto& primitive = primitive_map.at(id);
         if (primitive.type != ObjectType::InvalidObject && primitive.type != ObjectType::renderLayer) {
-            if (primitive.face_flags & flagNorth) cube_faces[North].draw(primitive.id, primitive.type, camera);
-            if (primitive.face_flags & flagWest) cube_faces[West].draw(primitive.id, primitive.type, camera);
-            if (primitive.face_flags & flagMeridian) cube_faces[Meridian].draw(primitive.id, primitive.type, camera);
-            if (primitive.face_flags & flagEast) cube_faces[East].draw(primitive.id, primitive.type, camera);
-            if (primitive.face_flags & flagAntiMeridian) cube_faces[AntiMeridian].draw(primitive.id, primitive.type, camera);
-            if (primitive.face_flags & flagSouth) cube_faces[South].draw(primitive.id, primitive.type, camera);
+            if (primitive.face_flags & flagNorth) cube_faces[North].queue_draw(primitive.id, primitive.type, camera);
+            if (primitive.face_flags & flagWest) cube_faces[West].queue_draw(primitive.id, primitive.type, camera);
+            if (primitive.face_flags & flagMeridian) cube_faces[Meridian].queue_draw(primitive.id, primitive.type, camera);
+            if (primitive.face_flags & flagEast) cube_faces[East].queue_draw(primitive.id, primitive.type, camera);
+            if (primitive.face_flags & flagAntiMeridian) cube_faces[AntiMeridian].queue_draw(primitive.id, primitive.type, camera);
+            if (primitive.face_flags & flagSouth) cube_faces[South].queue_draw(primitive.id, primitive.type, camera);
         }
+    }
+    for (auto& face: cube_faces) {
+        face.draw(camera);
     }
 }
 

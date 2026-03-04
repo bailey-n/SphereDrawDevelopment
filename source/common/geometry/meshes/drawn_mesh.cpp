@@ -6,6 +6,11 @@
 #include "shader_manager.h"
 #include <queue>
 
+glm::mat4x4 DrawnMesh::MVP = (
+    glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.01f, 100.0f) *
+    glm::lookAt(glm::vec3{0.0f, 0.0f, -2.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f})
+);
+
 DrawnMesh::DrawnMesh(
     CubeFaceNum face, const std::vector<glm::vec3>& verts,
     const std::vector<glm::vec4>& cols, const std::vector<glm::u32vec3>& idxs
@@ -58,6 +63,10 @@ DrawnMesh::DrawnMesh(
     glBindVertexArray(0);
 }
 
+DrawnMesh::~DrawnMesh() {
+    glDeleteVertexArrays(1, &VAO);
+}
+
 void DrawnMesh::draw_texture() const {
     auto program = shaderManager::get_program({"pointVertexShader.glsl", "pointFragmentShader.glsl"});
     if (program == static_cast<GLuint>(-1)) return;
@@ -65,8 +74,6 @@ void DrawnMesh::draw_texture() const {
 
     const GLint mvpID = glGetUniformLocation(program, "MVP");
     if (mvpID != -1) {
-        glm::mat4 MVP = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.01f, 100.0f) *
-            glm::lookAt(glm::vec3{0.0f, 0.0f, -2.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
         glUniformMatrix4fv(mvpID, 1, GL_FALSE, glm::value_ptr(MVP));
     }
 

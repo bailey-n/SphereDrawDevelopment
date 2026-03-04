@@ -20,6 +20,9 @@ class Camera {
     unsigned int change_bits = 2;
 
 public:
+    uint32_t scr_width;
+    uint32_t scr_height;
+
     Camera();
     explicit Camera(const glm::mat4& projection);
     Camera(const glm::vec3& position, const glm::vec3& direction, const glm::vec3& up, glm::mat4 projection);

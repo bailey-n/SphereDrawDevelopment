@@ -93,8 +93,18 @@ void SphereMesh::draw(const Camera& camera, float texture_opacity) const {
     if (tex_opacity_id == -1) return;
     glUniform1f(tex_opacity_id, texture_opacity);
 
-    glBindTexture(GL_TEXTURE_2D, Texture);
     glBindVertexArray(VAO);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, Texture);
+    const GLint texture_sampler_id = glGetUniformLocation(program, "textureSampler");
+    if (texture_sampler_id == -1) {
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindVertexArray(0);
+        return;
+    }
+    glUniform1f(texture_sampler_id, 0);
+
     glDrawElements(GL_TRIANGLES,indices.count(),GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
 }

@@ -155,6 +155,9 @@ camera({2.0f, 0.0f, 0.0f},
        {0.0f, 1.0f, 0.0f},
        glm::perspective(glm::radians(60.0f), 4.0f / 3.0f, 0.1f, 100.0f)
        ){
+    renderer.init();
+    camera.scr_width = w_width;
+    camera.scr_height = w_height;
     if (!initialized) return;
 }
 
@@ -206,11 +209,11 @@ void Application::mainloop() {
     std::uniform_real_distribution<float> lat_dist(-M_PI/2.0, M_PI/2.0);
     std::uniform_real_distribution<float> color_dist(0.0f, 1.0f);
     std::vector<CubeMapId> ids;
-    // for (int i = 0; i < 500; i++) {
-    //     test_point.p = lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f);
-    //     test_point.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
-    //     ids.emplace_back(renderer.add_new_point(test_point));
-    // }
+    for (int i = 0; i < 500; i++) {
+        test_point.p = lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f);
+        test_point.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
+        ids.emplace_back(renderer.add_new_point(test_point));
+    }
     // for (int i = 0; i < 500; i++) {
     //     std::shuffle(ids.begin(), ids.end(), rng);
     //     for (auto id: ids) {
@@ -230,8 +233,8 @@ void Application::mainloop() {
 //    }
     // renderer.reset();
     // END TEST
-    test_mesh.emplace();
-    test_mesh->_test_render();
+    // test_mesh.emplace();
+    // test_mesh->update_texture();
 
     constexpr double rotations_per_second = 0.5;
     constexpr unsigned int FPS = 60;
@@ -511,10 +514,11 @@ void Application::render_frame() {
 
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glViewport(0, 0, w_width, w_height);
+    // glViewport(0, 0, w_width, w_height);
     // planet.draw(camera);
-    test_mesh->draw(camera);
-    // renderer.draw(camera);
+    // test_mesh->draw(camera);
+    renderer.draw(camera);
+
     draw_data = ImGui::GetDrawData();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(window);

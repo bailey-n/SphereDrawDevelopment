@@ -5,6 +5,7 @@
 #ifndef SPHEREDRAW_CUBEMAP_H
 #define SPHEREDRAW_CUBEMAP_H
 
+#include <GL/glew.h>
 #include <vector>
 #include "drawing/primitive.h"
 #include "drawing/layer.h"
@@ -42,7 +43,10 @@ class Cubemap {
     void clamp_position(CubeMapId layer, uint32_t& position);
 
 public:
-    void draw(const Camera& camera) const;
+    Cubemap();
+    void init();
+
+    void draw(const Camera& camera);
 
     // Resets the cubemap and removes all rendered objects
     void reset();

@@ -27,7 +27,11 @@ struct DrawnMesh {
 
     CubeFaceNum face;
 
+    static glm::mat4x4 MVP;
+    static glm::mat4x4 view;
+
     DrawnMesh(CubeFaceNum face, const std::vector<glm::vec3>& sphere_vertices, const std::vector<glm::vec4>& vertex_colors, const std::vector<glm::u32vec3>& indices);
+    ~DrawnMesh();
     void draw_texture() const;
 };
 
