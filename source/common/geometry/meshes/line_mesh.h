@@ -21,19 +21,6 @@
 #include "cubemap_util.h"
 #include <optional>
 
-struct ConnectorQuad {
-    glm::vec3 top_left;
-    glm::vec3 bottom_left;
-    glm::vec3 bottom_right;
-    glm::vec3 top_right;
-
-    ConnectorQuad(const glm::vec4& tl, const glm::vec4& bl, const glm::vec4& br, const glm::vec4& tr);
-    [[nodiscard]] std::vector<glm::vec3> subdivide_left(double max_subdiv_angle) const;
-    [[nodiscard]] std::vector<glm::vec3> subdivide_right(double max_subdiv_angle) const;
-};
-
-std::vector<ConnectorQuad> connect_vertices(const glm::vec3& left, const glm::vec3& right, float tan_w, double subdiv_angle);
-
 class LineMesh {
     BasicMesh mesh;
     GLuint program;

@@ -32,10 +32,12 @@ public:
     CubeFace();
     void init(CubeFaceNum face);
     void reset();
-    void add_new_point_primitive(CubeMapId id, const PointPrimitive& point_data);
-    void remove_point_primitive(CubeMapId id);
-    void add_new_line_primitive(CubeMapId id, const PolylinePrimitive& line_data, const std::vector<LineBuilderVertexInfo>& line_builder_info);
-    void remove_line_primitive(CubeMapId id);
+    // void add_new_point_primitive(CubeMapId id, const PointPrimitive& point_data);
+    // void remove_point_primitive(CubeMapId id);
+    // void add_new_line_primitive(CubeMapId id, const PolylinePrimitive& line_data);
+    // void remove_line_primitive(CubeMapId id);
+    bool add_new_drawn_primitive(CubeMapId id, const glm::vec4& color, const std::vector<glm::vec3>& positions, const std::vector<glm::u32vec3>& indices);
+    bool remove_drawn_primitive(CubeMapId id);
 
     void queue_draw(CubeMapId id, ObjectType type, const Camera& camera);
     void draw(const Camera& camera);

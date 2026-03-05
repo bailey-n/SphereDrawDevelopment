@@ -78,7 +78,25 @@ void DrawnMesh::draw_texture() const {
     }
 
     glBindVertexArray(VAO);
+
+    // std::vector<GLuint> vbos;
+    // GLint max_attribs;
+    // glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &max_attribs);
+    // // 2. and 3. Iterate through attributes and query bound buffers
+    // std::cout << "VBOs for VAO #" << VAO << std::endl;
+    // for (int i = 0; i < max_attribs; ++i) {
+    //     GLint buffer_id = 0;
+    //     glGetVertexAttribiv(i, GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING, &buffer_id);
+    //     std::cout << buffer_id << " ";
+    // }
+    // std::cout << std::endl;
+
     glDrawElements(GL_TRIANGLES, indices.count(),GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
 }
+
+bool DrawnMesh::renderable() const {
+    return indices.size() > 0;
+}
+
 

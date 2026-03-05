@@ -15,49 +15,36 @@
 using Edge = std::pair<uint32_t, uint32_t>;
 using Triangle = glm::u32vec3;
 
-ConnectorQuad::ConnectorQuad(const glm::vec4& tl, const glm::vec4& bl, const glm::vec4& br, const glm::vec4& tr) :
-top_left(tl), bottom_left(bl), bottom_right(br), top_right(tr) {}
-
-std::vector<glm::vec3> ConnectorQuad::subdivide_left(double max_subdiv_angle) const {
-    return subdivide_line(top_left, bottom_left, max_subdiv_angle);
-}
-
-std::vector<glm::vec3> ConnectorQuad::subdivide_right(double max_subdiv_angle) const {
-    return subdivide_line(top_right, bottom_right, max_subdiv_angle);
-}
-
-
-
-std::vector<ConnectorQuad> connect_vertices(const glm::vec3& left, const glm::vec3& right, float width, double subdiv_angle_threshold) {
-    // if (glm::dot(left, right) > 0.9999) return {};
-    double total_angle = std::acos(glm::dot(left, right));
-    int subdivs = (int)std::ceil(total_angle / subdiv_angle_threshold) - 1;
-    auto subdiv_angle = (float)(total_angle / (subdivs+1));
-
-    // Get initial rotation, left side of rectangle, right side of rectangle
-    float tan_w = std::tan(width);
-    glm::vec3 rot_axis = glm::normalize(glm::cross(left, right));
-    glm::vec3 offset = tan_w * rot_axis; // TODO: Make inclusive of angle PI/2. May break at ~PI/2 otherwise. Use multiple-cross-product instead.
-    glm::vec4 top_left = glm::vec4((glm::normalize(left + offset)), 1.0f);
-    glm::vec4 bottom_left = glm::vec4((glm::normalize(left - offset)), 1.0f);
-    glm::vec4 top_end = glm::vec4((glm::normalize(right + offset)), 1.0f);
-    glm::vec4 bottom_end = glm::vec4((glm::normalize(right - offset)), 1.0f);
-
-    // Rotate until we get all the necessary quads
-    std::vector<ConnectorQuad> output;
-    auto rotation = glm::rotate(glm::mat4x4(1.0f), subdiv_angle, rot_axis);
-    output.reserve(subdivs+1);
-    for (int i = 0; i < subdivs; i++) {
-        auto top_right = rotation * top_left;
-        auto bottom_right = rotation * bottom_left;
-        output.emplace_back(top_left, bottom_left, bottom_right, top_right);
-        top_left = top_right;
-        bottom_left = bottom_right;
-    }
-    output.emplace_back(top_left, bottom_left, bottom_end, top_end); // last quad
-
-    return output;
-};
+// std::vector<ConnectorQuad> connect_vertices(const glm::vec3& left, const glm::vec3& right, float width, double subdiv_angle_threshold) {
+//     // if (glm::dot(left, right) > 0.9999) return {};
+//     double total_angle = std::acos(glm::dot(left, right));
+//     int subdivs = (int)std::ceil(total_angle / subdiv_angle_threshold) - 1;
+//     auto subdiv_angle = (float)(total_angle / (subdivs+1));
+//
+//     // Get initial rotation, left side of rectangle, right side of rectangle
+//     float tan_w = std::tan(width);
+//     glm::vec3 rot_axis = glm::normalize(glm::cross(left, right));
+//     glm::vec3 offset = tan_w * rot_axis; // TODO: Make inclusive of angle PI/2. May break at ~PI/2 otherwise. Use multiple-cross-product instead.
+//     glm::vec4 top_left = glm::vec4((glm::normalize(left + offset)), 1.0f);
+//     glm::vec4 bottom_left = glm::vec4((glm::normalize(left - offset)), 1.0f);
+//     glm::vec4 top_end = glm::vec4((glm::normalize(right + offset)), 1.0f);
+//     glm::vec4 bottom_end = glm::vec4((glm::normalize(right - offset)), 1.0f);
+//
+//     // Rotate until we get all the necessary quads
+//     std::vector<ConnectorQuad> output;
+//     auto rotation = glm::rotate(glm::mat4x4(1.0f), subdiv_angle, rot_axis);
+//     output.reserve(subdivs+1);
+//     for (int i = 0; i < subdivs; i++) {
+//         auto top_right = rotation * top_left;
+//         auto bottom_right = rotation * bottom_left;
+//         output.emplace_back(top_left, bottom_left, bottom_right, top_right);
+//         top_left = top_right;
+//         bottom_left = bottom_right;
+//     }
+//     output.emplace_back(top_left, bottom_left, bottom_end, top_end); // last quad
+//
+//     return output;
+// };
 
 LineMesh::LineMesh(const std::vector<LineBuilderVertexInfo> &build_info, const glm::vec4& color, float width) :
 mesh(), color(color), width(std::min(width, (float)M_PI)) {

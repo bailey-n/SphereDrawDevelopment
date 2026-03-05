@@ -121,3 +121,75 @@ void make_sphere_circle(glm::vec3 center, float radius, std::vector<glm::vec3>& 
         curr_triangles->pop();
     }
 }
+
+ConnectorQuad::ConnectorQuad(const glm::vec4& tl, const glm::vec4& bl, const glm::vec4& br, const glm::vec4& tr) :
+top_left(tl), bottom_left(bl), bottom_right(br), top_right(tr) {}
+
+std::vector<glm::vec3> ConnectorQuad::subdivide_left(double max_subdiv_angle) const {
+    return subdivide_line(top_left, bottom_left, max_subdiv_angle);
+}
+
+std::vector<glm::vec3> ConnectorQuad::subdivide_right(double max_subdiv_angle) const {
+    return subdivide_line(top_right, bottom_right, max_subdiv_angle);
+}
+
+std::vector<ConnectorQuad> connect_vertices(const glm::vec3& left, const glm::vec3& right, float width, double subdiv_angle_threshold) {
+    // if (glm::dot(left, right) > 0.9999) return {};
+    double total_angle = std::acos(glm::dot(left, right));
+    int subdivs = (int)std::ceil(total_angle / subdiv_angle_threshold) - 1;
+    auto subdiv_angle = (float)(total_angle / (subdivs+1));
+
+    // Get initial rotation, left side of rectangle, right side of rectangle
+    float tan_w = std::tan(width);
+    glm::vec3 rot_axis = glm::normalize(glm::cross(left, right));
+    glm::vec3 offset = tan_w * rot_axis; // TODO: Make inclusive of angle PI/2. May break at ~PI/2 otherwise. Use multiple-cross-product instead.
+    glm::vec4 top_left = glm::vec4((glm::normalize(left + offset)), 1.0f);
+    glm::vec4 bottom_left = glm::vec4((glm::normalize(left - offset)), 1.0f);
+    glm::vec4 top_end = glm::vec4((glm::normalize(right + offset)), 1.0f);
+    glm::vec4 bottom_end = glm::vec4((glm::normalize(right - offset)), 1.0f);
+
+    // Rotate until we get all the necessary quads
+    std::vector<ConnectorQuad> output;
+    auto rotation = glm::rotate(glm::mat4x4(1.0f), subdiv_angle, rot_axis);
+    output.reserve(subdivs+1);
+    for (int i = 0; i < subdivs; i++) {
+        auto top_right = rotation * top_left;
+        auto bottom_right = rotation * bottom_left;
+        output.emplace_back(top_left, bottom_left, bottom_right, top_right);
+        top_left = top_right;
+        bottom_left = bottom_right;
+    }
+    output.emplace_back(top_left, bottom_left, bottom_end, top_end); // last quad
+
+    return output;
+};
+
+void make_sphere_line(const std::vector<glm::vec3>& input_verts, float width, std::vector<glm::vec3>& positions, std::vector<glm::u32vec3>& indices) {
+    if (input_verts.empty()) return;
+    if (input_verts.size() == 1) {
+        make_sphere_circle(input_verts[0], width, positions, indices);
+        return;
+    }
+
+    // Build connecting rectangles
+    for (int i = 0; i < input_verts.size()-1; i++) {
+        auto rectangle_quads = connect_vertices(input_verts[i], input_verts[i+1], width, MAX_SUBDIV_WIDTH);
+        auto top_left = rectangle_quads[0].top_left;
+        auto bottom_left = rectangle_quads[0].top_right;
+
+        for (const auto& quad: rectangle_quads) {
+            size_t start_idx = indices.size();
+            positions.emplace_back(top_left);
+            positions.emplace_back(bottom_left);
+            positions.emplace_back(quad.bottom_right);
+            positions.emplace_back(quad.top_right);
+
+            indices.emplace_back(start_idx, start_idx+1, start_idx+2);
+            indices.emplace_back(start_idx, start_idx+2, start_idx+3);
+
+            // Move quad forward
+            top_left = quad.top_right;
+            bottom_left = quad.bottom_right;
+        }
+    }
+}

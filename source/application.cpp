@@ -209,11 +209,11 @@ void Application::mainloop() {
     std::uniform_real_distribution<float> lat_dist(-M_PI/2.0, M_PI/2.0);
     std::uniform_real_distribution<float> color_dist(0.0f, 1.0f);
     std::vector<CubeMapId> ids;
-    for (int i = 0; i < 500; i++) {
-        test_point.p = lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f);
-        test_point.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
-        ids.emplace_back(renderer.add_new_point(test_point));
-    }
+    // for (int i = 0; i < 500; i++) {
+    //     test_point.p = lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f);
+    //     test_point.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
+    //     ids.emplace_back(renderer.add_new_point(test_point));
+    // }
     // for (int i = 0; i < 500; i++) {
     //     std::shuffle(ids.begin(), ids.end(), rng);
     //     for (auto id: ids) {
@@ -225,12 +225,16 @@ void Application::mainloop() {
     //     test_point.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
     //     ids.emplace_back(renderer.add_new_point(test_point));
     // }
-//    for (int i = 0; i < 50; i++) {
-//        test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
-//        test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
-//        test_line.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
-//        ids.emplace_back(renderer.add_new_line(test_line));
-//    }
+    for (int i = 0; i < 50; i++) {
+        test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
+        test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
+        test_line.color = glm::vec4((float)i / 49.0f, (float)i / 49.0f, (float)i / 49.0f, 1.0f);
+        ids.emplace_back(renderer.add_new_line(test_line));
+    }
+    test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
+    test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
+    test_line.color = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    ids.emplace_back(renderer.add_new_line(test_line));
     // renderer.reset();
     // END TEST
     // test_mesh.emplace();
@@ -376,7 +380,6 @@ void Application::handle_event(const AppAction &action) {
                 break;
             }
             std::cout << "latitude: " << glm::degrees(click_coords.first) << "\nlongitude: " << glm::degrees(click_coords.second) << std::endl;
-            std::cout << "Face #: " << get_face(lat_lon_to_xyz(click_coords.first, click_coords.second, 1.0f)) << std::endl;
             switch (state.draw_mode) {
                 case State::DrawMode::Point:
                     break;

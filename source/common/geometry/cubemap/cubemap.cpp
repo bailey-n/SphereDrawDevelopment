@@ -5,6 +5,7 @@
 #include "cubemap.h"
 #include <map>
 #include <iostream>
+#include "vertex_manipulation.h"
 
 Cubemap::Cubemap() = default;
 
@@ -177,27 +178,25 @@ CubeMapId Cubemap::add_new_point(const PointPrimitive &point, CubeMapId layer, u
     if (layer != InvalidId && !primitive_map.contains(layer)) return InvalidId;
     clamp_position(layer, position);
 
-    CubeFaceNum face = get_face(point.p);
-
     // TODO: Account for layer and position insertion
     CubeMapId render_id = activate_new_id();
     if (render_id == InvalidId) return InvalidId;
 
-    CubeFaceFlags flags;
-    switch (face) {
-        case North: flags = flagNorth; break;
-        case West: flags = flagWest; break;
-        case Meridian: flags = flagMeridian; break;
-        case East: flags = flagEast; break;
-        case AntiMeridian: flags = flagAntiMeridian; break;
-        case South: flags = flagSouth; break;
-    }
+    std::vector<glm::vec3> temp_positions;
+    std::vector<glm::u32vec3> temp_indices;
+    make_sphere_circle(point.p, point.size, temp_positions, temp_indices);
 
     // Add point
-    primitive_map.try_emplace(render_id, renderPoint, render_id, layer, flags);
-    cube_faces[face].add_new_point_primitive(render_id, point);
-    recursive_layer_insert(render_id, layer, position);
+    CubeFaceFlags flags = 0;
+    if (cube_faces[North].add_new_drawn_primitive(render_id, point.color, temp_positions, temp_indices)) flags |= flagNorth;
+    if (cube_faces[West].add_new_drawn_primitive(render_id, point.color, temp_positions, temp_indices)) flags |= flagWest;
+    if (cube_faces[Meridian].add_new_drawn_primitive(render_id, point.color, temp_positions, temp_indices)) flags |= flagMeridian;
+    if (cube_faces[East].add_new_drawn_primitive(render_id, point.color, temp_positions, temp_indices)) flags |= flagEast;
+    if (cube_faces[AntiMeridian].add_new_drawn_primitive(render_id, point.color, temp_positions, temp_indices)) flags |= flagAntiMeridian;
+    if (cube_faces[South].add_new_drawn_primitive(render_id, point.color, temp_positions, temp_indices)) flags |= flagSouth;
 
+    primitive_map.try_emplace(render_id, renderPoint, render_id, layer, flags);
+    recursive_layer_insert(render_id, layer, position);
     return render_id;
 }
 
@@ -207,12 +206,12 @@ bool Cubemap::remove_point(CubeMapId cmap_id) {
     if (info.type != ObjectType::renderPoint) return false;
     auto flags = info.face_flags;
 
-    if (flags & flagNorth) { cube_faces[North].remove_point_primitive(cmap_id); }
-    if (flags & flagWest) { cube_faces[West].remove_point_primitive(cmap_id); }
-    if (flags & flagMeridian) { cube_faces[Meridian].remove_point_primitive(cmap_id); }
-    if (flags & flagEast) { cube_faces[East].remove_point_primitive(cmap_id); }
-    if (flags & flagAntiMeridian) { cube_faces[AntiMeridian].remove_point_primitive(cmap_id); }
-    if (flags & flagSouth) { cube_faces[South].remove_point_primitive(cmap_id); }
+    if (flags & flagNorth) { cube_faces[North].remove_drawn_primitive(cmap_id); }
+    if (flags & flagWest) { cube_faces[West].remove_drawn_primitive(cmap_id); }
+    if (flags & flagMeridian) { cube_faces[Meridian].remove_drawn_primitive(cmap_id); }
+    if (flags & flagEast) { cube_faces[East].remove_drawn_primitive(cmap_id); }
+    if (flags & flagAntiMeridian) { cube_faces[AntiMeridian].remove_drawn_primitive(cmap_id); }
+    if (flags & flagSouth) { cube_faces[South].remove_drawn_primitive(cmap_id); }
 
     remove_element_from_parent_layer(cmap_id);
     draw_order.erase(draw_order.begin()+get_global_object_render_position(cmap_id));
@@ -228,44 +227,57 @@ CubeMapId Cubemap::add_new_line(const PolylinePrimitive& line, CubeMapId layer, 
 
     CubeMapId render_id = activate_new_id();
     if (render_id == InvalidId) return InvalidId;
+
+    std::vector<glm::vec3> temp_positions;
+    std::vector<glm::u32vec3> temp_indices;
+    make_sphere_line(line.verts, line.width, temp_positions, temp_indices);
+
+    // Add new line
     CubeFaceFlags flags = 0;
+    if (cube_faces[North].add_new_drawn_primitive(render_id, line.color, temp_positions, temp_indices)) flags |= flagNorth;
+    if (cube_faces[West].add_new_drawn_primitive(render_id, line.color, temp_positions, temp_indices)) flags |= flagWest;
+    if (cube_faces[Meridian].add_new_drawn_primitive(render_id, line.color, temp_positions, temp_indices)) flags |= flagMeridian;
+    if (cube_faces[East].add_new_drawn_primitive(render_id, line.color, temp_positions, temp_indices)) flags |= flagEast;
+    if (cube_faces[AntiMeridian].add_new_drawn_primitive(render_id, line.color, temp_positions, temp_indices)) flags |= flagAntiMeridian;
+    if (cube_faces[South].add_new_drawn_primitive(render_id, line.color, temp_positions, temp_indices)) flags |= flagSouth;
 
-    // Get info relevant to renderer for each vertex
-    std::vector<LineBuilderVertexInfo> build_info;
-    for (int i = 0; i < line.verts.size(); i++) {
-        auto& new_build_vtx = build_info.emplace_back(
-                LineBuilderVertexInfo::lvMiddle, line.verts[i], get_face(line.verts[i])
-                );
-        if (i == 0) new_build_vtx.ty = LineBuilderVertexInfo::lvStart;
-        else if (i == line.verts.size()-1) new_build_vtx.ty = LineBuilderVertexInfo::lvEnd;
-        if (i > 0) {
-            new_build_vtx.face_transition_before = build_info[i - 1].face != new_build_vtx.face;
-            build_info[i-1].face_transition_after = new_build_vtx.face_transition_before;
-        }
-    }
+    // // Get info relevant to renderer for each vertex
+    // std::vector<LineBuilderVertexInfo> build_info;
+    // for (int i = 0; i < line.verts.size(); i++) {
+    //     auto& new_build_vtx = build_info.emplace_back(
+    //             LineBuilderVertexInfo::lvMiddle, line.verts[i], get_face(line.verts[i])
+    //             );
+    //     if (i == 0) new_build_vtx.ty = LineBuilderVertexInfo::lvStart;
+    //     else if (i == line.verts.size()-1) new_build_vtx.ty = LineBuilderVertexInfo::lvEnd;
+    //     if (i > 0) {
+    //         new_build_vtx.face_transition_before = build_info[i - 1].face != new_build_vtx.face;
+    //         build_info[i-1].face_transition_after = new_build_vtx.face_transition_before;
+    //     }
+    // }
+    //
+    // // Split ranges by continuity on face
+    // std::vector<std::vector<LineBuilderVertexInfo>> line_ranges;
+    // line_ranges.emplace_back();
+    // for (int i = 0; i < build_info.size(); i++) {
+    //     if (build_info[i].face_transition_before) {
+    //         line_ranges.emplace_back();
+    //     }
+    //     line_ranges.back().emplace_back(build_info[i]);
+    // }
+    //
+    // for (const auto& subline: line_ranges) {
+    //     auto face = subline[0].face;
+    //     switch (face) {
+    //         case North: flags |= flagNorth; break;
+    //         case West: flags |= flagWest; break;
+    //         case Meridian: flags |= flagMeridian; break;
+    //         case East: flags |= flagEast; break;
+    //         case AntiMeridian: flags |= flagAntiMeridian; break;
+    //         case South: flags |= flagSouth; break;
+    //     }
+    //     cube_faces[face].add_new_line_primitive(render_id, line, subline);
+    // }
 
-    // Split ranges by continuity on face
-    std::vector<std::vector<LineBuilderVertexInfo>> line_ranges;
-    line_ranges.emplace_back();
-    for (int i = 0; i < build_info.size(); i++) {
-        if (build_info[i].face_transition_before) {
-            line_ranges.emplace_back();
-        }
-        line_ranges.back().emplace_back(build_info[i]);
-    }
-
-    for (const auto& subline: line_ranges) {
-        auto face = subline[0].face;
-        switch (face) {
-            case North: flags |= flagNorth; break;
-            case West: flags |= flagWest; break;
-            case Meridian: flags |= flagMeridian; break;
-            case East: flags |= flagEast; break;
-            case AntiMeridian: flags |= flagAntiMeridian; break;
-            case South: flags |= flagSouth; break;
-        }
-        cube_faces[face].add_new_line_primitive(render_id, line, subline);
-    }
     primitive_map.try_emplace(render_id, renderLine, render_id, layer, flags);
     recursive_layer_insert(render_id, layer, position);
     return render_id;
