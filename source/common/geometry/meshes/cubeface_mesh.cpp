@@ -32,20 +32,6 @@ texture(), model(1.0f), program(-1), face(face)
     glViewport(0, 0, WIDTH, HEIGHT);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // Mesh generation
-    // auto mesh_data = generate_cuboid_face_mesh_data(2);
-    //
-    // std::vector<glm::vec3> _positions;
-    // for (int i = 0; i < 4; i++) { _positions.emplace_back(mesh_data.positions.at(i)); }
-    // std::vector<glm::vec2> _uvs = {
-    //     {1.0, 1.0},
-    //     {0.0, 1.0},
-    //     {1.0, 0.0},
-    //     {0.0, 0.0}
-    // };
-    // std::vector<glm::u32vec3> _indices;
-    // for (int i = 0; i < 2; i++) { _indices.emplace_back(mesh_data.indices.at(i)); }
-
     auto d_mesh = get_cube_face_mesh_data(face);
 
     positions.re_buffer_data({d_mesh.vertices[0], d_mesh.vertices[1], d_mesh.vertices[2], d_mesh.vertices[3]});
@@ -54,33 +40,15 @@ texture(), model(1.0f), program(-1), face(face)
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    // glBindVertexArray(_test_mesh.VAO);
-    // std::vector<glm::vec3> _test_positions = {
-    //     {0.4f, 0.4f, 0.0f},
-    //     {-0.6f, 0.4f, 0.0f},
-    //     {0.4f, -0.6f, 0.0f}
-    // };
-    // std::vector<glm::vec4> _test_colors = {
-    //     {1.0f, 0.0f, 0.0f, 1.0f},
-    //     {1.0f, 0.0f, 0.0f, 1.0f},
-    //     {1.0f, 0.0f, 0.0f, 1.0f}
-    // };
-    // std::vector<glm::u32vec3> _test_indices = {
-    //     {2, 1, 0}
-    // };
-    // _test_mesh.set_positions(_test_positions);
-    // _test_mesh.set_colors(_test_colors);
-    // _test_mesh.set_indices(_test_indices);
     glBindVertexArray(0);
 }
 
 CubeFaceMesh::~CubeFaceMesh() {
-    // std::cout << "Running destructor" << std::endl;
     glDeleteFramebuffers(1, &frame_buffer);
     glDeleteVertexArrays(1, &VAO);
 }
 
-void CubeFaceMesh::update_texture(const std::vector<DrawnMesh*>& texture_meshes) const {
+void CubeFaceMesh::update_texture(const std::optional<ReferenceTextureMesh>& reference_texture, const std::vector<DrawnMesh*>& texture_meshes) const {
     glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
 
     // GLint textureId;
@@ -94,7 +62,10 @@ void CubeFaceMesh::update_texture(const std::vector<DrawnMesh*>& texture_meshes)
 
     glViewport(0, 0, texture.width, texture.height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    // _test_mesh.draw_texture();
+
+    if (reference_texture.has_value()) {
+        reference_texture->draw_texture();
+    }
     for (auto mesh: texture_meshes) {
         mesh->draw_texture();
     }

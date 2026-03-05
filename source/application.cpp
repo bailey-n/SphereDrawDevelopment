@@ -376,6 +376,7 @@ void Application::handle_event(const AppAction &action) {
                 break;
             }
             std::cout << "latitude: " << glm::degrees(click_coords.first) << "\nlongitude: " << glm::degrees(click_coords.second) << std::endl;
+            std::cout << "Face #: " << get_face(lat_lon_to_xyz(click_coords.first, click_coords.second, 1.0f)) << std::endl;
             switch (state.draw_mode) {
                 case State::DrawMode::Point:
                     break;

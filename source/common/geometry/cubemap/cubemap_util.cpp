@@ -13,7 +13,7 @@ CubeFaceNum get_face(const glm::vec3& position) {
         if (position.y > 0) return North;
         else return South;
     }
-    if (meridian_val >= latitude_val) {
+    if (meridian_val >= west_val) {
         if (position.x > 0) return Meridian;
         else return AntiMeridian;
     }

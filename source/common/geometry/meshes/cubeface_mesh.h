@@ -10,6 +10,8 @@
 #include "vertex_attribute.h"
 #include "basic_mesh.h"
 #include "drawn_mesh.h"
+#include <optional>
+#include "reference_texture_mesh.h"
 
 class CubeFaceMesh {
     static constexpr int WIDTH = 1024;
@@ -32,7 +34,7 @@ class CubeFaceMesh {
 public:
     CubeFaceMesh(CubeFaceNum face);
     ~CubeFaceMesh();
-    void update_texture(const std::vector<DrawnMesh*>& texture_meshes) const;
+    void update_texture(const std::optional<ReferenceTextureMesh>& reference_texture, const std::vector<DrawnMesh*>& texture_meshes) const;
     void draw(const Camera& camera);
 };
 

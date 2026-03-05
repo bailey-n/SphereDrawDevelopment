@@ -9,6 +9,7 @@ CubeFace::CubeFace() : face(North) {}
 
 void CubeFace::init(CubeFaceNum face) {
     this->face = face;
+    reference_mesh.emplace(face);
     mesh.emplace(face);
 }
 
@@ -72,6 +73,6 @@ void CubeFace::draw(const Camera& camera) {
         to_draw.emplace_back(&drawn_meshes.at(draw_order.front()));
         draw_order.pop();
     }
-    mesh->update_texture(to_draw);
+    mesh->update_texture(reference_mesh, to_draw);
     mesh->draw(camera);
 }

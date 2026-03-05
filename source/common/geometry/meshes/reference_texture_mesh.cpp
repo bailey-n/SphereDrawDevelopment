@@ -3,47 +3,34 @@
 //
 
 #include "reference_texture_mesh.h"
-
 #include "cubeface.h"
+#include "shader_manager.h"
 
+glm::mat4x4 ReferenceTextureMesh::MVP = (
+    glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.01f, 100.0f) *
+    glm::lookAt(glm::vec3{0.0f, 0.0f, -2.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f})
+);
 std::string ReferenceTextureMesh::reference_texture_path = "textures/Earth_cube_map.png";
 
 #include "sphere_mesh.h"
 #include <iostream>
 #include "cubemap_texture_util.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
 #include "mesh_util.h"
 
 void ReferenceTextureMesh::load_texture() {
-    // Load texture
-    unsigned char* tex_data = stbi_load(texture_path.c_str(), &texture_width, &texture_height, &texture_channels, 0);
-    if (!tex_data) {
-        std::cout << "Failed to load texture data" << std::endl;
-        throw std::exception();
-    }
-    // Extend edges by 1 pixel to cover up lines formed from floating point imprecision
-    extend_cube_map_edges(tex_data, texture_channels, texture_width, texture_height);
-    switch(texture_channels) {
-        case 3: tex = gen_texture_2d_rgb(texture_width, texture_height, tex_data); break;
-        case 4: tex = gen_texture_2d_rgba(texture_width, texture_height, tex_data); break;
-        default:
-            std::cout << "Unrecognized texture format" << std::endl;
-            throw std::exception();
-    }
-    stbi_image_free(tex_data);
+    load_cubemap_texture(texture_path, tex, texture_width, texture_height, texture_channels);
 }
 
 ReferenceTextureMesh::ReferenceTextureMesh(CubeFaceNum face) :
-VAO(gen_vao_and_bind()), tex(-1),
-positions(get),
-colors(data.colors),
-normals(data.normals),
-uvs(data.uvs),
-indices(data.indices),
-program(-1),
-model(glm::mat4(1.0)) {
+texture_path(reference_texture_path), VAO(gen_vao_and_bind()), tex(-1),
+positions({}), uvs({}), indices({}),
+program(-1) {
     load_texture();
+    program = shaderManager::get_program({"importedCubemap.vert", "importedCubemap.frag"});
+    auto m_data = get_full_cubemap_texture_mesh_data(face);
+    positions.re_buffer_data({m_data.vertices[0], m_data.vertices[1], m_data.vertices[2], m_data.vertices[3]});
+    uvs.re_buffer_data({m_data.uvs[1], m_data.uvs[0], m_data.uvs[3], m_data.uvs[2]}); // Got them wrong in the function so we undo that mistake here
+    indices.re_buffer_data({m_data.indices[0], m_data.indices[1]});
     glBindVertexArray(0);
 }
 
@@ -56,11 +43,14 @@ void ReferenceTextureMesh::draw_texture() const {
     if (program == static_cast<GLuint>(-1)) return;
     glUseProgram(program);
 
-    if (!camera.bind(program, model)) return;
+    const GLint mvpID = glGetUniformLocation(program, "MVP");
+    if (mvpID != -1) {
+        glUniformMatrix4fv(mvpID, 1, GL_FALSE, glm::value_ptr(MVP));
+    }
 
     const GLint tex_opacity_id = glGetUniformLocation(program, "textureOpacity");
     if (tex_opacity_id == -1) return;
-    glUniform1f(tex_opacity_id, texture_opacity);
+    glUniform1f(tex_opacity_id, TEXTURE_OPACITY);
 
     glBindVertexArray(VAO);
 
@@ -74,6 +64,6 @@ void ReferenceTextureMesh::draw_texture() const {
     }
     glUniform1f(texture_sampler_id, 0);
 
-    glDrawElements(GL_TRIANGLES,indices.count(),GL_UNSIGNED_INT, nullptr);
+    glDrawElements(GL_TRIANGLES, indices.count(),GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
 }

@@ -20,8 +20,8 @@
 class CubeFace {
     CubeFaceNum face;
 
-    std::optional<CubeFaceMesh> mesh;
     std::optional<ReferenceTextureMesh> reference_mesh;
+    std::optional<CubeFaceMesh> mesh;
 
     std::map<CubeMapId, DrawnMesh> drawn_meshes;
     std::queue<CubeMapId> draw_order;

@@ -1,27 +1,10 @@
 #include "sphere_mesh.h"
 #include <iostream>
 #include "cubemap_texture_util.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
 #include "mesh_util.h"
 
 void SphereMesh::load_texture() {
-    // Load texture
-    unsigned char* tex_data = stbi_load(texture_path.c_str(), &texture_width, &texture_height, &texture_channels, 0);
-    if (!tex_data) {
-        std::cout << "Failed to load texture data" << std::endl;
-        throw std::exception();
-    }
-    // Extend edges by 1 pixel to cover up lines formed from floating point imprecision
-    extend_cube_map_edges(tex_data, texture_channels, texture_width, texture_height);
-    switch(texture_channels) {
-        case 3: Texture = gen_texture_2d_rgb(texture_width, texture_height, tex_data); break;
-        case 4: Texture = gen_texture_2d_rgba(texture_width, texture_height, tex_data); break;
-        default:
-            std::cout << "Unrecognized texture format" << std::endl;
-            throw std::exception();
-    }
-    stbi_image_free(tex_data);
+    load_cubemap_texture(texture_path, Texture, texture_width, texture_height, texture_channels);
 }
 
 SphereMesh::SphereMesh(std::string texture, const SphereMeshData& data) :

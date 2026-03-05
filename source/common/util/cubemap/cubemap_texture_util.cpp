@@ -4,6 +4,29 @@
 #include <map>
 #include <optional>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
+void load_cubemap_texture(const std::string& tex_path, GLuint& tex_handle, int& tex_width, int& tex_height, int& tex_channels) {
+    // Load texture
+    unsigned char* tex_data = stbi_load(tex_path.c_str(), &tex_width, &tex_height, &tex_channels, 0);
+    if (!tex_data) {
+        std::cout << "Failed to load texture data" << std::endl;
+        throw std::exception();
+    }
+    // Extend edges by 1 pixel to cover up lines formed from floating point imprecision
+    extend_cube_map_edges(tex_data, tex_channels, tex_width, tex_height);
+    switch(tex_channels) {
+    case 3: tex_handle = gen_texture_2d_rgb(tex_width, tex_height, tex_data); break;
+    case 4: tex_handle = gen_texture_2d_rgba(tex_width, tex_height, tex_data); break;
+    default:
+        std::cout << "Unrecognized texture format" << std::endl;
+        throw std::exception();
+    }
+    stbi_image_free(tex_data);
+}
+
+
 unsigned long pixel_index(unsigned int x, unsigned int y, unsigned int width, unsigned int height) {
     return x + (width * y);
 }
@@ -123,62 +146,55 @@ void extend_cube_map_edges(unsigned char* data, unsigned int channels, unsigned 
 }
 
 CubemapTextureMeshData get_full_cubemap_texture_mesh_data(CubeFaceNum face) {
-    /* North Face: [bl: (1, 1, 1)] [br: (1, 1, -1)] [tr: (-1, 1, -1)] [tl: (-1, 1, 1)]         <-> 7 6 2 3
-     * West Face: [bl: (-1, -1, 1)] [br: (1, -1, 1)] [tr: (1, 1, 1)] [tl: (-1, 1, 1)]         <-> 1 5 7 3
-     * Meridian Face: [bl: (1, -1, 1)] [br: (1, -1, -1)] [tr: (1, 1, -1)] [tl: (1, 1, 1)]         <-> 5 4 6 7
-     * East Face: [bl: (1, -1, -1)] [br: (-1, -1, -1)] [tr: (-1, 1, -1)] [tl: (1, 1, -1)]     <-> 4 0 2 6
-     * AntiMeridian Face: [bl: (-1, -1, -1)] [br: (-1, -1, 1)] [tr: (-1, 1, 1)] [tl: (-1, 1, -1)]     <-> 0 1 3 2
-     * South Face: [bl: (-1, -1, 1)] [br: (-1, -1, -1)] [tr: (1, -1, -1)] [tl: (1, -1, 1)]     <-> 1 0 4 5
-     */
+    // Possible uv X values
+    constexpr float x0 = 0.0f;
+    constexpr float x1 = 0.25f;
+    constexpr float x2 = 0.5f;
+    constexpr float x3 = 0.75f;
+    constexpr float x4 = 1.0f;
+    // Possible uv Y values
+    constexpr float y0 = 0.0f;
+    constexpr float y1 = (1.0f / 3.0f);
+    constexpr float y2 = (2.0f / 3.0f);
+    constexpr float y3 = 1.0f;
 
-    constexpr float c = std::sqrt(1.0f / 3.0f);
-    glm::vec3 corners[8] = {
-        {-c, -c, -c},
-        {-c, -c, c},
-        {-c, c, -c},
-        {-c, c, c},
-        {c, -c, -c},
-        {c, -c, c},
-        {c, c, -c},
-        {c, c, c},
-        };
-    glm::vec2 uvs[4] = {
-        {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}
-    };
-    glm::u32vec3 indices[2] = {
-        {0, 1, 2}, {0, 2, 3}
-    };
+    // glm::vec2 uvs[20] = { // Note that some uvs are not possible
+    // {x0, y0}, {x1, y0}, {x2, y0}, {x3, y0}, {x4, y0},
+    // {x0, y1}, {x1, y1}, {x2, y1}, {x3, y1}, {x4, y1},
+    // {x0, y2}, {x1, y2}, {x2, y2}, {x3, y2}, {x4, y2},
+    // {x0, y3}, {x1, y3}, {x2, y3}, {x3, y3}, {x4, y3},
+    // };
 
     switch (face) {
     case North: return {
-        {corners[7], corners[6], corners[2], corners[3]},
-        {uvs[0], uvs[1], uvs[2], uvs[3]},
-            {indices[0], indices[1]}
+        {{-1.0f, -1.0f, 0.0f}, {1.0f, -1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {-1.0f, 1.0f, 0.0f}},
+        {{x1, y1}, {x2, y1}, {x2, y0}, {x1, y0}},
+        {{0, 1, 2}, {0, 2, 3}}
     };
     case West: return {
-        {corners[1], corners[5], corners[7], corners[3]},
-        {uvs[0], uvs[1], uvs[2], uvs[3]},
-        {indices[0], indices[1]}
+        {{-1.0f, -1.0f, 0.0f}, {1.0f, -1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {-1.0f, 1.0f, 0.0f}},
+        {{x0, y2}, {x1, y2}, {x1, y1}, {x0, y1}},
+        {{0, 1, 2}, {0, 2, 3}}
     };
     case Meridian: return {
-        {corners[5], corners[4], corners[6], corners[7]},
-        {uvs[0], uvs[1], uvs[2], uvs[3]},
-        {indices[0], indices[1]}
+        {{-1.0f, -1.0f, 0.0f}, {1.0f, -1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {-1.0f, 1.0f, 0.0f}},
+        {{x1, y2}, {x2, y2}, {x2, y1}, {x1, y1}},
+        {{0, 1, 2}, {0, 2, 3}}
     };
     case East: return {
-        {corners[4], corners[0], corners[2], corners[6]},
-        {uvs[0], uvs[1], uvs[2], uvs[3]},
-        {indices[0], indices[1]}
+        {{-1.0f, -1.0f, 0.0f}, {1.0f, -1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {-1.0f, 1.0f, 0.0f}},
+        {{x2, y2}, {x3, y2}, {x3, y1}, {x2, y1}},
+        {{0, 1, 2}, {0, 2, 3}}
     };
     case AntiMeridian: return {
-        {corners[0], corners[1], corners[3], corners[2]},
-        {uvs[0], uvs[1], uvs[2], uvs[3]},
-        {indices[0], indices[1]}
+        {{-1.0f, -1.0f, 0.0f}, {1.0f, -1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {-1.0f, 1.0f, 0.0f}},
+        {{x3, y2}, {x4, y2}, {x4, y1}, {x3, y1}},
+        {{0, 1, 2}, {0, 2, 3}}
     };
     case South: return {
-        {corners[1], corners[0], corners[4], corners[5]},
-        {uvs[0], uvs[1], uvs[2], uvs[3]},
-        {indices[0], indices[1]}
+        {{-1.0f, -1.0f, 0.0f}, {1.0f, -1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {-1.0f, 1.0f, 0.0f}},
+        {{x1, y3}, {x2, y3}, {x2, y2}, {x1, y2}},
+        {{0, 1, 2}, {0, 2, 3}}
     };
     }
     return {

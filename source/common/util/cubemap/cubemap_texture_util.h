@@ -8,6 +8,7 @@
 #include <stack>
 #include <set>
 
+void load_cubemap_texture(const std::string& tex_path, GLuint& tex_handle, int& tex_width, int& tex_height, int& tex_channels);
 unsigned long pixel_index(unsigned int x, unsigned int y, unsigned int width, unsigned int height);
 unsigned long channel_index(unsigned long pixel_index, unsigned int channel, unsigned int channels);
 void extend_cube_map_edges(unsigned char* data, unsigned int channels, unsigned int width, unsigned int height);

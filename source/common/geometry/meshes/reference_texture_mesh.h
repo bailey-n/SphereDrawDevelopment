@@ -28,20 +28,20 @@ class ReferenceTextureMesh {
     GLuint tex;
 
     vertexAttribute<0, glm::vec3> positions;
-    vertexAttribute<1, glm::vec3> colors;
-    vertexAttribute<2, glm::vec3> normals;
-    vertexAttribute<3, glm::vec2> uvs;
+    vertexAttribute<1, glm::vec2> uvs;
     elementBuffer indices;
 
     GLuint program;
-    glm::mat4 model;
 
+    static glm::mat4x4 MVP;
+    // static glm::mat4x4 view;
     static std::string reference_texture_path;
+    static constexpr float TEXTURE_OPACITY = 1.0f;
 
     void load_texture();
 
 public:
-    ReferenceTextureMesh(CubeFaceNum face);
+    explicit ReferenceTextureMesh(CubeFaceNum face);
     ~ReferenceTextureMesh();
 
     void draw_texture() const;
