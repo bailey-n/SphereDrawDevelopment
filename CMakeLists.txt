@@ -66,8 +66,6 @@ add_executable(SphereDraw
         # Meshes for OpenGL
         source/common/util/opengl/buffer/mesh_util.cpp
         source/common/util/opengl/buffer/mesh_util.h
-        source/common/geometry/meshes/sphere_mesh.cpp
-        source/common/geometry/meshes/sphere_mesh.h
         source/common/geometry/cubemap/cubemap.cpp
         source/common/geometry/cubemap/cubemap.h
         # Higher-level shape object classes
@@ -96,16 +94,12 @@ add_executable(SphereDraw
         source/common/util/opengl/shader/shader_program.h
         source/common/geometry/drawing/primitive_id_manager.h
         source/common/geometry/drawing/primitive_id_manager.cpp
-        source/common/geometry/meshes/point_mesh.h
-        source/common/geometry/meshes/point_mesh.cpp
         source/common/geometry/meshes/basic_mesh.h
         source/common/geometry/meshes/basic_mesh.cpp
         source/common/geometry/cubemap/cubemap_util.h
         source/common/geometry/cubemap/cubeface.h
         source/common/geometry/cubemap/cubeface.cpp
         source/common/geometry/cubemap/cubemap_util.cpp
-        source/common/geometry/meshes/line_mesh.h
-        source/common/geometry/meshes/line_mesh.cpp
         source/common/util/math/common_glm_operations.h
         source/common/util/math/common_glm_operations.cpp
         source/common/util/math/vertex_manipulation.cpp

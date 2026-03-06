@@ -12,7 +12,6 @@ glm::mat4x4 ReferenceTextureMesh::MVP = (
 );
 std::string ReferenceTextureMesh::reference_texture_path = "textures/Earth_cube_map.png";
 
-#include "sphere_mesh.h"
 #include <iostream>
 #include "cubemap_texture_util.h"
 #include "mesh_util.h"

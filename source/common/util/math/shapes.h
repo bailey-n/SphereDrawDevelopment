@@ -3,9 +3,16 @@
 
 #include <vector>
 #include <glm/gtc/type_ptr.hpp>
-#include "sphere_mesh.h"
 #include <optional>
 #include "cubemap_util.h"
+
+struct SphereMeshData {
+    std::vector<glm::vec3> positions;
+    std::vector<glm::vec3> colors;
+    std::vector<glm::vec3> normals;
+    std::vector<glm::vec2> uvs;
+    std::vector<glm::u32vec3> indices;
+};
 
 SphereMeshData generate_cuboid_face_mesh_data(unsigned int vertices_per_edge);
 std::pair<float, float> xyz_to_lat_lon(const glm::vec3& xyz);

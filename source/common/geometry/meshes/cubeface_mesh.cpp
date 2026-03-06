@@ -6,7 +6,6 @@
 #include "shader_manager.h"
 #include "shapes.h"
 #include "common_glm_operations.h"
-#include "line_mesh.h"
 #include "drawn_mesh.h"
 
 CubeFaceMesh::CubeFaceMesh(CubeFaceNum face):
