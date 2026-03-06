@@ -201,13 +201,13 @@ void Application::mouseButtonCallback(GLFWwindow *win, int button, int action, i
 // APPLICATION MAINLOOP
 void Application::mainloop() {
     // FOR TESTING SPEED & STABILITY
-    PointPrimitive test_point(0);
-    std::random_device rd;
-    std::default_random_engine rng(rd());
-    std::uniform_real_distribution<float> long_dist(-M_PI, M_PI);
-    std::uniform_real_distribution<float> lat_dist(-M_PI/2.0, M_PI/2.0);
-    std::uniform_real_distribution<float> color_dist(0.0f, 1.0f);
-    std::vector<CubeMapId> ids;
+//    PointPrimitive test_point(0);
+//    std::random_device rd;
+//    std::default_random_engine rng(rd());
+//    std::uniform_real_distribution<float> long_dist(-M_PI, M_PI);
+//    std::uniform_real_distribution<float> lat_dist(-M_PI/2.0, M_PI/2.0);
+//    std::uniform_real_distribution<float> color_dist(0.0f, 1.0f);
+//    std::vector<CubeMapId> ids;
 //     for (int i = 0; i < 50; i++) {
 //         test_point.p = lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f);
 //         test_point.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
@@ -224,13 +224,13 @@ void Application::mainloop() {
     //     test_point.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
     //     ids.emplace_back(renderer.add_new_point(test_point));
     // }
-    for (int i = 0; i < 500; i++) {
-        PolylinePrimitive test_line(0);
-        test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
-        test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
-        test_line.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
-        ids.emplace_back(renderer.add_new_line(test_line));
-    }
+//    for (int i = 0; i < 500; i++) {
+//        PolylinePrimitive test_line(0);
+//        test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
+//        test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
+//        test_line.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
+//        ids.emplace_back(renderer.add_new_line(test_line));
+//    }
 //    test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
 //    test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
 //    test_line.color = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -376,7 +376,7 @@ void Application::handle_event(const AppAction &action) {
             click_coords = sphere_click_lat_lon(
                     camera.get_position(),
                     camera.get_up(),
-                    (float)planet.get_radius(),
+                    1.0f,
                     glm::vec2((float)x_pos, (float)y_pos),
                     (float)w_width, (float)w_height,
                     glm::radians(60.0)
@@ -524,9 +524,6 @@ void Application::render_frame() {
 
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    // glViewport(0, 0, w_width, w_height);
-    // planet.draw(camera);
-    // test_mesh->draw(camera);
     renderer.draw(camera);
 
     draw_data = ImGui::GetDrawData();

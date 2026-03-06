@@ -14,7 +14,6 @@
 #include <deque>
 #include "application_action.h"
 #include "shader_manager.h"
-#include "planet.h"
 #include "camera.h"
 #include "shapes.h"
 #include "gui.h"
@@ -42,7 +41,6 @@ class Application {
     ImDrawData* draw_data = nullptr;
 
     // Main program
-    Planet planet;
     Camera camera;
     SphereDrawGUI app_gui;
     Cubemap renderer;

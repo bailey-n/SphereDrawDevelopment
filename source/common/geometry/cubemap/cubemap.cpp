@@ -136,12 +136,12 @@ void Cubemap::draw(const Camera &camera) {
         for (const auto id: draw_order) {
             const auto& primitive = primitive_map.at(id);
             if (primitive.type != ObjectType::InvalidObject && primitive.type != ObjectType::renderLayer) {
-                if (primitive.face_flags & flagNorth) cube_faces[North].queue_draw(primitive.id, primitive.type, camera);
-                if (primitive.face_flags & flagWest) cube_faces[West].queue_draw(primitive.id, primitive.type, camera);
-                if (primitive.face_flags & flagMeridian) cube_faces[Meridian].queue_draw(primitive.id, primitive.type, camera);
-                if (primitive.face_flags & flagEast) cube_faces[East].queue_draw(primitive.id, primitive.type, camera);
-                if (primitive.face_flags & flagAntiMeridian) cube_faces[AntiMeridian].queue_draw(primitive.id, primitive.type, camera);
-                if (primitive.face_flags & flagSouth) cube_faces[South].queue_draw(primitive.id, primitive.type, camera);
+                if (primitive.face_flags & flagNorth) cube_faces[North].queue_draw(primitive.id);
+                if (primitive.face_flags & flagWest) cube_faces[West].queue_draw(primitive.id);
+                if (primitive.face_flags & flagMeridian) cube_faces[Meridian].queue_draw(primitive.id);
+                if (primitive.face_flags & flagEast) cube_faces[East].queue_draw(primitive.id);
+                if (primitive.face_flags & flagAntiMeridian) cube_faces[AntiMeridian].queue_draw(primitive.id);
+                if (primitive.face_flags & flagSouth) cube_faces[South].queue_draw(primitive.id);
             }
         }
         drawing_updated = false;
@@ -246,43 +246,6 @@ CubeMapId Cubemap::add_new_line(const PolylinePrimitive& line, CubeMapId layer, 
     if (cube_faces[East].add_new_drawn_primitive(render_id, line.color, temp_positions, temp_indices)) flags |= flagEast;
     if (cube_faces[AntiMeridian].add_new_drawn_primitive(render_id, line.color, temp_positions, temp_indices)) flags |= flagAntiMeridian;
     if (cube_faces[South].add_new_drawn_primitive(render_id, line.color, temp_positions, temp_indices)) flags |= flagSouth;
-
-    // // Get info relevant to renderer for each vertex
-    // std::vector<LineBuilderVertexInfo> build_info;
-    // for (int i = 0; i < line.verts.size(); i++) {
-    //     auto& new_build_vtx = build_info.emplace_back(
-    //             LineBuilderVertexInfo::lvMiddle, line.verts[i], get_face(line.verts[i])
-    //             );
-    //     if (i == 0) new_build_vtx.ty = LineBuilderVertexInfo::lvStart;
-    //     else if (i == line.verts.size()-1) new_build_vtx.ty = LineBuilderVertexInfo::lvEnd;
-    //     if (i > 0) {
-    //         new_build_vtx.face_transition_before = build_info[i - 1].face != new_build_vtx.face;
-    //         build_info[i-1].face_transition_after = new_build_vtx.face_transition_before;
-    //     }
-    // }
-    //
-    // // Split ranges by continuity on face
-    // std::vector<std::vector<LineBuilderVertexInfo>> line_ranges;
-    // line_ranges.emplace_back();
-    // for (int i = 0; i < build_info.size(); i++) {
-    //     if (build_info[i].face_transition_before) {
-    //         line_ranges.emplace_back();
-    //     }
-    //     line_ranges.back().emplace_back(build_info[i]);
-    // }
-    //
-    // for (const auto& subline: line_ranges) {
-    //     auto face = subline[0].face;
-    //     switch (face) {
-    //         case North: flags |= flagNorth; break;
-    //         case West: flags |= flagWest; break;
-    //         case Meridian: flags |= flagMeridian; break;
-    //         case East: flags |= flagEast; break;
-    //         case AntiMeridian: flags |= flagAntiMeridian; break;
-    //         case South: flags |= flagSouth; break;
-    //     }
-    //     cube_faces[face].add_new_line_primitive(render_id, line, subline);
-    // }
 
     primitive_map.try_emplace(render_id, renderLine, render_id, layer, flags);
     recursive_layer_insert(render_id, layer, position);

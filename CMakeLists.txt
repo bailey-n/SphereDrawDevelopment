@@ -59,8 +59,6 @@ add_executable(SphereDraw
         source/application.h
         source/application.cpp
         source/application_action.h
-        source/planet.cpp
-        source/planet.h
         source/gui.h
         source/gui.cpp
 
