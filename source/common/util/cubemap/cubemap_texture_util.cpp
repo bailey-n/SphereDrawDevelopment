@@ -171,7 +171,7 @@ CubemapTextureMeshData get_full_cubemap_texture_mesh_data(CubeFaceNum face) {
         {{x1, y1}, {x2, y1}, {x2, y0}, {x1, y0}},
         {{0, 1, 2}, {0, 2, 3}}
     };
-    case West: return {
+    case East: return { // Yes I know East and West are switched. I don't know why but it fixes a bug
         {{-1.0f, -1.0f, 0.0f}, {1.0f, -1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {-1.0f, 1.0f, 0.0f}},
         {{x0, y2}, {x1, y2}, {x1, y1}, {x0, y1}},
         {{0, 1, 2}, {0, 2, 3}}
@@ -181,7 +181,7 @@ CubemapTextureMeshData get_full_cubemap_texture_mesh_data(CubeFaceNum face) {
         {{x1, y2}, {x2, y2}, {x2, y1}, {x1, y1}},
         {{0, 1, 2}, {0, 2, 3}}
     };
-    case East: return {
+    case West: return {
         {{-1.0f, -1.0f, 0.0f}, {1.0f, -1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {-1.0f, 1.0f, 0.0f}},
         {{x2, y2}, {x3, y2}, {x3, y1}, {x2, y1}},
         {{0, 1, 2}, {0, 2, 3}}

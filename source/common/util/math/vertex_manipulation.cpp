@@ -175,17 +175,17 @@ void make_sphere_line(const std::vector<glm::vec3>& input_verts, float width, st
     for (int i = 0; i < input_verts.size()-1; i++) {
         auto rectangle_quads = connect_vertices(input_verts[i], input_verts[i+1], width, MAX_SUBDIV_WIDTH);
         auto top_left = rectangle_quads[0].top_left;
-        auto bottom_left = rectangle_quads[0].top_right;
+        auto bottom_left = rectangle_quads[0].bottom_left;
+        positions.emplace_back(top_left);
+        positions.emplace_back(bottom_left);
 
         for (const auto& quad: rectangle_quads) {
-            size_t start_idx = indices.size();
-            positions.emplace_back(top_left);
-            positions.emplace_back(bottom_left);
-            positions.emplace_back(quad.bottom_right);
+            size_t start_idx = positions.size()-2;
             positions.emplace_back(quad.top_right);
+            positions.emplace_back(quad.bottom_right);
 
-            indices.emplace_back(start_idx, start_idx+1, start_idx+2);
-            indices.emplace_back(start_idx, start_idx+2, start_idx+3);
+            indices.emplace_back(start_idx, start_idx+1, start_idx+3);
+            indices.emplace_back(start_idx, start_idx+3, start_idx+2);
 
             // Move quad forward
             top_left = quad.top_right;

@@ -92,12 +92,14 @@ void CubeFace::queue_draw(CubeMapId id, ObjectType type, const Camera &camera) {
 }
 
 void CubeFace::draw(const Camera& camera) {
-    std::vector<DrawnMesh*> to_draw;
-    to_draw.reserve(draw_order.size());
-    while (!draw_order.empty()) {
-        to_draw.emplace_back(&drawn_meshes.at(draw_order.front()));
-        draw_order.pop();
+    if (!draw_order.empty()) {
+        std::vector<DrawnMesh*> to_draw;
+        to_draw.reserve(draw_order.size());
+        while (!draw_order.empty()) {
+            to_draw.emplace_back(&drawn_meshes.at(draw_order.front()));
+            draw_order.pop();
+        }
+        mesh->update_texture(reference_mesh, to_draw);
     }
-    mesh->update_texture(reference_mesh, to_draw);
     mesh->draw(camera);
 }

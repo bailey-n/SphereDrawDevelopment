@@ -196,7 +196,7 @@ CubeFaceMeshData get_cube_face_mesh_data(CubeFaceNum face) {
      * South Face: [bl: (-1, -1, 1)] [br: (-1, -1, -1)] [tr: (1, -1, -1)] [tl: (1, -1, 1)]     <-> 1 0 4 5
      */
 
-    constexpr float c = std::sqrt(1.0f / 3.0f);
+    const float c = std::sqrt(1.0f / 3.0f);
     glm::vec3 corners[8] = {
         {-c, -c, -c},
         {-c, -c, c},
@@ -220,7 +220,7 @@ CubeFaceMeshData get_cube_face_mesh_data(CubeFaceNum face) {
         {uvs[0], uvs[1], uvs[2], uvs[3]},
             {indices[0], indices[1]}
     };
-    case West: return {
+    case East: return { // Yes I know East and West are swapped. I don't know why but it fixes a bug.
         {corners[1], corners[5], corners[7], corners[3]},
         {uvs[0], uvs[1], uvs[2], uvs[3]},
         {indices[0], indices[1]}
@@ -230,7 +230,7 @@ CubeFaceMeshData get_cube_face_mesh_data(CubeFaceNum face) {
         {uvs[0], uvs[1], uvs[2], uvs[3]},
         {indices[0], indices[1]}
     };
-    case East: return {
+    case West: return {
         {corners[4], corners[0], corners[2], corners[6]},
         {uvs[0], uvs[1], uvs[2], uvs[3]},
         {indices[0], indices[1]}

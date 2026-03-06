@@ -26,6 +26,7 @@ class Cubemap {
     std::deque<CubeMapId> deactivated_ids;
     CubeMapId lowest_unused_id = 0;
     uint32_t feature_count = 0;
+    bool drawing_updated = false;
 
     bool is_active_id(CubeMapId id);
     [[nodiscard]] bool is_full() const;

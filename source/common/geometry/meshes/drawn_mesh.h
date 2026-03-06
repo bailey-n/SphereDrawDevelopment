@@ -32,6 +32,7 @@ struct DrawnMesh {
 
     DrawnMesh(CubeFaceNum face, const std::vector<glm::vec3>& sphere_vertices, const std::vector<glm::vec4>& vertex_colors, const std::vector<glm::u32vec3>& indices);
     ~DrawnMesh();
+    void update_all();
     void draw_texture() const;
     bool renderable() const;
 };

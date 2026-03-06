@@ -56,10 +56,18 @@ DrawnMesh::DrawnMesh(
     }
 
     // Reset buffers
+    update_all();
+}
+
+void DrawnMesh::update_all() {
+    glBindVertexArray(VAO);
+
     vertices.re_buffer();
     colors.re_buffer();
+    // std::cout << colors.buff[0].x << std::endl;
     indices.re_buffer();
 
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }
 
