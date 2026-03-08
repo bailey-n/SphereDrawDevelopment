@@ -3,7 +3,21 @@
 //
 
 #include "cubemap.h"
+#include <map>
 #include <iostream>
+#include "vertex_manipulation.h"
+
+Cubemap::Cubemap() = default;
+
+void Cubemap::init() {
+    cube_faces[North].init(North);
+    cube_faces[West].init(West);
+    cube_faces[Meridian].init(Meridian);
+    cube_faces[East].init(East);
+    cube_faces[AntiMeridian].init(AntiMeridian);
+    cube_faces[South].init(South);
+    drawing_updated = true;
+}
 
 uint32_t Cubemap::layer_size(const LayerPrimitiveInfo &info) const {
     uint32_t layer_pos = get_global_object_render_position(info.id);
@@ -20,6 +34,33 @@ void Cubemap::remove_element_from_parent_layer(CubeMapId cmap_id) {
     }
 }
 
+void Cubemap::recursive_layer_insert(CubeMapId cmap_id, CubeMapId layer, uint32_t position) {
+    // TODO: Change to support recursive layer insertion
+    if (position == -1) {
+        if (layer == InvalidId) draw_order.emplace_back(cmap_id);
+        else {
+            position = get_global_object_render_position(layer_map.at(layer).end_id) + 1;
+            layer_map.at(layer).end_id = cmap_id;
+            draw_order.insert(draw_order.begin() + position, cmap_id);
+        }
+    }
+    else {
+        if (layer == InvalidId) {
+            draw_order.insert(draw_order.begin() + position, cmap_id);
+        }
+        else {
+            auto global_position = get_global_object_render_position(layer) + 1 + position;
+            if (position == layer_size(layer_map.at(layer))) { layer_map.at(layer).end_id = cmap_id; }
+            draw_order.insert(draw_order.begin() + global_position, cmap_id);
+        }
+    }
+}
+
+void Cubemap::clamp_position(CubeMapId layer, uint32_t &position) {
+    if (layer == InvalidId) { position = std::min(position, (uint32_t)draw_order.size()); }
+    else { position = std::min(position, layer_size(layer_map.at(layer))); }
+}
+
 void Cubemap::reset() {
     for (auto& face: cube_faces) face.reset();
     draw_order.clear();
@@ -30,6 +71,7 @@ void Cubemap::reset() {
     active_ids.clear();
     lowest_unused_id = 0;
     feature_count = 0;
+    drawing_updated = true;
 }
 
 bool Cubemap::is_active_id(CubeMapId id) {
@@ -89,17 +131,23 @@ void Cubemap::remove_id(CubeMapId id) {
     deactivated_ids.insert(curr, id);
 }
 
-void Cubemap::draw(const Camera &camera) const {
-    for (const auto id: draw_order) {
-        const auto& primitive = primitive_map.at(id);
-        if (primitive.type != ObjectType::InvalidObject && primitive.type != ObjectType::renderLayer) {
-            if (primitive.face_flags & flagNorth) cube_faces[North].draw(primitive.id, primitive.type, camera);
-            if (primitive.face_flags & flagWest) cube_faces[West].draw(primitive.id, primitive.type, camera);
-            if (primitive.face_flags & flagMeridian) cube_faces[Meridian].draw(primitive.id, primitive.type, camera);
-            if (primitive.face_flags & flagEast) cube_faces[East].draw(primitive.id, primitive.type, camera);
-            if (primitive.face_flags & flagAntiMeridian) cube_faces[AntiMeridian].draw(primitive.id, primitive.type, camera);
-            if (primitive.face_flags & flagSouth) cube_faces[South].draw(primitive.id, primitive.type, camera);
+void Cubemap::draw(const Camera &camera) {
+    if (drawing_updated) {
+        for (const auto id: draw_order) {
+            const auto& primitive = primitive_map.at(id);
+            if (primitive.type != ObjectType::InvalidObject && primitive.type != ObjectType::renderLayer) {
+                if (primitive.face_flags & flagNorth) cube_faces[North].queue_draw(primitive.id);
+                if (primitive.face_flags & flagWest) cube_faces[West].queue_draw(primitive.id);
+                if (primitive.face_flags & flagMeridian) cube_faces[Meridian].queue_draw(primitive.id);
+                if (primitive.face_flags & flagEast) cube_faces[East].queue_draw(primitive.id);
+                if (primitive.face_flags & flagAntiMeridian) cube_faces[AntiMeridian].queue_draw(primitive.id);
+                if (primitive.face_flags & flagSouth) cube_faces[South].queue_draw(primitive.id);
+            }
         }
+        drawing_updated = false;
+    }
+    for (auto& face: cube_faces) {
+        face.draw(camera);
     }
 }
 
@@ -133,50 +181,28 @@ uint32_t Cubemap::get_local_object_render_position(CubeMapId cmap_id) const {
 CubeMapId Cubemap::add_new_point(const PointPrimitive &point, CubeMapId layer, uint32_t position) {
     // Ensure layer exists
     if (layer != InvalidId && !primitive_map.contains(layer)) return InvalidId;
-    // Clamp position
-    if (layer == InvalidId) { position = std::min(position, (uint32_t)draw_order.size()); }
-    else { position = std::min(position, layer_size(layer_map.at(layer))); }
-
-    CubeFaceNum face = get_face(point.p);
+    clamp_position(layer, position);
 
     // TODO: Account for layer and position insertion
     CubeMapId render_id = activate_new_id();
     if (render_id == InvalidId) return InvalidId;
 
-    CubeFaceFlags flags;
-    switch (face) {
-        case North: flags = flagNorth; break;
-        case West: flags = flagWest; break;
-        case Meridian: flags = flagMeridian; break;
-        case East: flags = flagEast; break;
-        case AntiMeridian: flags = flagAntiMeridian; break;
-        case South: flags = flagSouth; break;
-    }
+    std::vector<glm::vec3> temp_positions;
+    std::vector<glm::u32vec3> temp_indices;
+    make_sphere_circle(point.p, point.size, temp_positions, temp_indices);
 
     // Add point
+    CubeFaceFlags flags = 0;
+    if (cube_faces[North].add_new_drawn_primitive(render_id, point.color, temp_positions, temp_indices)) flags |= flagNorth;
+    if (cube_faces[West].add_new_drawn_primitive(render_id, point.color, temp_positions, temp_indices)) flags |= flagWest;
+    if (cube_faces[Meridian].add_new_drawn_primitive(render_id, point.color, temp_positions, temp_indices)) flags |= flagMeridian;
+    if (cube_faces[East].add_new_drawn_primitive(render_id, point.color, temp_positions, temp_indices)) flags |= flagEast;
+    if (cube_faces[AntiMeridian].add_new_drawn_primitive(render_id, point.color, temp_positions, temp_indices)) flags |= flagAntiMeridian;
+    if (cube_faces[South].add_new_drawn_primitive(render_id, point.color, temp_positions, temp_indices)) flags |= flagSouth;
+
     primitive_map.try_emplace(render_id, renderPoint, render_id, layer, flags);
-    cube_faces[face].add_new_point_primitive(render_id, point);
-
-    // TODO: Change to support recursive layer insertion
-    if (position == -1) {
-        if (layer == InvalidId) draw_order.emplace_back(render_id);
-        else {
-            position = get_global_object_render_position(layer_map.at(layer).end_id) + 1;
-            layer_map.at(layer).end_id = render_id;
-            draw_order.insert(draw_order.begin() + position, render_id);
-        }
-    }
-    else {
-        if (layer == InvalidId) {
-            draw_order.insert(draw_order.begin() + position, render_id);
-        }
-        else {
-            auto global_position = get_global_object_render_position(layer) + 1 + position;
-            if (position == layer_size(layer_map.at(layer))) { layer_map.at(layer).end_id = render_id; }
-            draw_order.insert(draw_order.begin() + global_position, render_id);
-        }
-    }
-
+    recursive_layer_insert(render_id, layer, position);
+    drawing_updated = true;
     return render_id;
 }
 
@@ -186,17 +212,43 @@ bool Cubemap::remove_point(CubeMapId cmap_id) {
     if (info.type != ObjectType::renderPoint) return false;
     auto flags = info.face_flags;
 
-    if (flags & flagNorth) { cube_faces[North].remove_point_primitive(cmap_id); }
-    if (flags & flagWest) { cube_faces[West].remove_point_primitive(cmap_id); }
-    if (flags & flagMeridian) { cube_faces[Meridian].remove_point_primitive(cmap_id); }
-    if (flags & flagEast) { cube_faces[East].remove_point_primitive(cmap_id); }
-    if (flags & flagAntiMeridian) { cube_faces[AntiMeridian].remove_point_primitive(cmap_id); }
-    if (flags & flagSouth) { cube_faces[South].remove_point_primitive(cmap_id); }
+    if (flags & flagNorth) { cube_faces[North].remove_drawn_primitive(cmap_id); }
+    if (flags & flagWest) { cube_faces[West].remove_drawn_primitive(cmap_id); }
+    if (flags & flagMeridian) { cube_faces[Meridian].remove_drawn_primitive(cmap_id); }
+    if (flags & flagEast) { cube_faces[East].remove_drawn_primitive(cmap_id); }
+    if (flags & flagAntiMeridian) { cube_faces[AntiMeridian].remove_drawn_primitive(cmap_id); }
+    if (flags & flagSouth) { cube_faces[South].remove_drawn_primitive(cmap_id); }
 
     remove_element_from_parent_layer(cmap_id);
     draw_order.erase(draw_order.begin()+get_global_object_render_position(cmap_id));
     primitive_map.erase(cmap_id);
     remove_id(cmap_id);
-
+    drawing_updated = true;
     return true;
+}
+
+CubeMapId Cubemap::add_new_line(const PolylinePrimitive& line, CubeMapId layer, uint32_t position) {
+    if (layer != InvalidId && !primitive_map.contains(layer)) return InvalidId;
+    clamp_position(layer, position);
+
+    CubeMapId render_id = activate_new_id();
+    if (render_id == InvalidId) return InvalidId;
+
+    std::vector<glm::vec3> temp_positions;
+    std::vector<glm::u32vec3> temp_indices;
+    make_sphere_line(line.verts, line.width, temp_positions, temp_indices);
+
+    // Add new line
+    CubeFaceFlags flags = 0;
+    if (cube_faces[North].add_new_drawn_primitive(render_id, line.color, temp_positions, temp_indices)) flags |= flagNorth;
+    if (cube_faces[West].add_new_drawn_primitive(render_id, line.color, temp_positions, temp_indices)) flags |= flagWest;
+    if (cube_faces[Meridian].add_new_drawn_primitive(render_id, line.color, temp_positions, temp_indices)) flags |= flagMeridian;
+    if (cube_faces[East].add_new_drawn_primitive(render_id, line.color, temp_positions, temp_indices)) flags |= flagEast;
+    if (cube_faces[AntiMeridian].add_new_drawn_primitive(render_id, line.color, temp_positions, temp_indices)) flags |= flagAntiMeridian;
+    if (cube_faces[South].add_new_drawn_primitive(render_id, line.color, temp_positions, temp_indices)) flags |= flagSouth;
+
+    primitive_map.try_emplace(render_id, renderLine, render_id, layer, flags);
+    recursive_layer_insert(render_id, layer, position);
+    drawing_updated = true;
+    return render_id;
 }

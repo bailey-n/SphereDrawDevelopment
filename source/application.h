@@ -1,27 +1,22 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
+#include "opengl_include.h"
 #include <iostream>
 #include <vector>
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include <deque>
 #include "application_action.h"
 #include "shader_manager.h"
-#include "planet.h"
 #include "camera.h"
 #include "shapes.h"
 #include "gui.h"
-#include "common/geometry/drawing/project.h"
-#include "common/geometry/drawing/project_io.h"
-
+#include "project.h"
+#include "project_io.h"
 #include "cubemap.h"
+#include "cubeface_mesh.h"
 
 class Application {
     const static int w_width;
@@ -42,10 +37,11 @@ class Application {
     ImDrawData* draw_data = nullptr;
 
     // Main program
-    Planet planet;
     Camera camera;
     SphereDrawGUI app_gui;
     Cubemap renderer;
+
+    std::optional<CubeFaceMesh> test_mesh;
 
     // Project state (for Save/Load/New)
     Project project;

@@ -1,11 +1,12 @@
 #ifndef SHADERMANAGER_H
 #define SHADERMANAGER_H
 
+#include "opengl_include.h"
+#include "shader_file.h"
+#include "shader_program.h"
 #include <vector>
 #include <map>
 #include <string>
-#include "shader_file.h"
-#include "shader_program.h"
 #include <array>
 
 class shaderManager {

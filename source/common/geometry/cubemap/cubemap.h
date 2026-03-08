@@ -5,19 +5,17 @@
 #ifndef SPHEREDRAW_CUBEMAP_H
 #define SPHEREDRAW_CUBEMAP_H
 
-#include <vector>
-#include "drawing/primitive.h"
-#include "drawing/layer.h"
+#include "opengl_include.h"
+#include "cubemap_util.h"
+#include "cubeface.h"
 #include "primitive.h"
 #include "layer.h"
+#include <vector>
 #include <cstdint>
 #include <climits>
 #include <set>
 #include <queue>
 #include <map>
-
-#include "cubemap_util.h"
-#include "cubeface.h"
 
 class Cubemap {
     // Attributes/methods for assigning reference ids for external code
@@ -25,6 +23,7 @@ class Cubemap {
     std::deque<CubeMapId> deactivated_ids;
     CubeMapId lowest_unused_id = 0;
     uint32_t feature_count = 0;
+    bool drawing_updated = false;
 
     bool is_active_id(CubeMapId id);
     [[nodiscard]] bool is_full() const;
@@ -38,9 +37,14 @@ class Cubemap {
 
     [[nodiscard]] uint32_t layer_size(const LayerPrimitiveInfo& info) const;
     void remove_element_from_parent_layer(CubeMapId cmap_id);
+    void recursive_layer_insert(CubeMapId cmap_id, CubeMapId layer, uint32_t position);
+    void clamp_position(CubeMapId layer, uint32_t& position);
 
 public:
-    void draw(const Camera& camera) const;
+    Cubemap();
+    void init();
+
+    void draw(const Camera& camera);
 
     // Resets the cubemap and removes all rendered objects
     void reset();

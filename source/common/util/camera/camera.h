@@ -1,12 +1,7 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include <glm/gtc/type_ptr.hpp>
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include "opengl_include.h"
 #include <functional>
 
 class Camera {
@@ -20,6 +15,9 @@ class Camera {
     unsigned int change_bits = 2;
 
 public:
+    uint32_t scr_width;
+    uint32_t scr_height;
+
     Camera();
     explicit Camera(const glm::mat4& projection);
     Camera(const glm::vec3& position, const glm::vec3& direction, const glm::vec3& up, glm::mat4 projection);

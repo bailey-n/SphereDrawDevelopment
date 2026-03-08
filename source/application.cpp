@@ -140,6 +140,9 @@ camera({2.0f, 0.0f, 0.0f},
        {0.0f, 1.0f, 0.0f},
        glm::perspective(glm::radians(60.0f), 4.0f / 3.0f, 0.1f, 100.0f)
        ){
+    renderer.init();
+    camera.scr_width = w_width;
+    camera.scr_height = w_height;
     if (!initialized) return;
     // connect project memory -> render cubemap pipeline
     project.attachCubemap(&renderer);
@@ -198,24 +201,43 @@ void Application::mainloop() {
 //    std::uniform_real_distribution<float> lat_dist(-M_PI/2.0, M_PI/2.0);
 //    std::uniform_real_distribution<float> color_dist(0.0f, 1.0f);
 //    std::vector<CubeMapId> ids;
+//     for (int i = 0; i < 50; i++) {
+//         test_point.p = lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f);
+//         test_point.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
+//         ids.emplace_back(renderer.add_new_point(test_point));
+//     }
+    // for (int i = 0; i < 500; i++) {
+    //     std::shuffle(ids.begin(), ids.end(), rng);
+    //     for (auto id: ids) {
+    //         renderer.remove_point(id);
+    //     }
+    // }
+    // for (int i = 0; i < 250; i++) {
+    //     test_point.p = lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f);
+    //     test_point.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
+    //     ids.emplace_back(renderer.add_new_point(test_point));
+    // }
 //    for (int i = 0; i < 500; i++) {
+//        PolylinePrimitive test_line(0);
+//        test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
+//        test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
+//        test_line.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
+//        ids.emplace_back(renderer.add_new_line(test_line));
+//    }
+//    test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
+//    test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
+//    test_line.color = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+//    ids.emplace_back(renderer.add_new_line(test_line));
+
+//    for (int i = 0; i < 50; i++) {
 //        test_point.p = lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f);
 //        test_point.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
 //        ids.emplace_back(renderer.add_new_point(test_point));
 //    }
-//    for (int i = 0; i < 500; i++) {
-//        std::shuffle(ids.begin(), ids.end(), rng);
-//        for (auto id: ids) {
-//            renderer.remove_point(id);
-//        }
-//    }
-//    for (int i = 0; i < 250; i++) {
-//        test_point.p = lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f);
-//        test_point.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
-//        ids.emplace_back(renderer.add_new_point(test_point));
-//    }
-//    renderer.reset();
+    // renderer.reset();
     // END TEST
+    // test_mesh.emplace();
+    // test_mesh->update_texture();
 
     constexpr double rotations_per_second = 0.5;
     constexpr unsigned int FPS = 60;
@@ -347,7 +369,7 @@ void Application::handle_event(const AppAction &action) {
             click_coords = sphere_click_lat_lon(
                     camera.get_position(),
                     camera.get_up(),
-                    (float)planet.get_radius(),
+                    1.0f,
                     glm::vec2((float)x_pos, (float)y_pos),
                     (float)w_width, (float)w_height,
                     glm::radians(60.0)
@@ -824,8 +846,8 @@ void Application::render_frame() {
 
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    planet.draw(camera);
     renderer.draw(camera);
+
     draw_data = ImGui::GetDrawData();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(window);

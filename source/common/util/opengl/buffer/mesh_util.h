@@ -1,15 +1,10 @@
 #ifndef MESH_UTIL_H
 #define MESH_UTIL_H
 
-#include <vector>
-#include "glm/gtc/type_ptr.hpp"
-#include "GL/glew.h"
-#include "GLFW/glfw3.h"
-#include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
-#include "glm/gtc/type_ptr.hpp"
-#include <string>
+#include "opengl_include.h"
 #include "camera.h"
+#include <vector>
+#include <string>
 #include <iostream>
 
 template <typename T>
@@ -61,4 +56,6 @@ GLuint gen_texture_2d(GLint fmt, GLsizei width, GLsizei height, void* tex_data);
 GLuint gen_texture_2d_rgba(GLsizei width, GLsizei height, void* tex_data);
 GLuint gen_texture_2d_rgb(GLsizei width, GLsizei height, void* tex_data);
 
-#endif //MESH_UTIL_H
+GLuint gen_fb_and_bind();
+
+#endif MESH_UTIL_H

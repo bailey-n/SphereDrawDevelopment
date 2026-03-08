@@ -10,6 +10,7 @@ GLuint gen_vao_and_bind() {
 }
 
 GLuint gen_texture_2d(GLint fmt, GLsizei width, GLsizei height, void* tex_data) {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     GLuint texture;
     glGenTextures(1, &texture);
     if (texture == static_cast<GLuint>(-1)) return texture;
@@ -19,6 +20,7 @@ GLuint gen_texture_2d(GLint fmt, GLsizei width, GLsizei height, void* tex_data) 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, fmt, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_data);
+    glBindTexture(GL_TEXTURE_2D, 0);
     return texture;
 }
 
@@ -28,4 +30,12 @@ GLuint gen_texture_2d_rgba(GLsizei width, GLsizei height, void* tex_data) {
 
 GLuint gen_texture_2d_rgb(GLsizei width, GLsizei height, void* tex_data) {
     return gen_texture_2d(GL_RGB, width, height, tex_data);
+}
+
+GLuint gen_fb_and_bind() {
+    GLuint fb = -1;
+    glGenFramebuffers(1, &fb);
+    if (fb == static_cast<GLuint>(-1)) return fb;
+    glBindFramebuffer(GL_FRAMEBUFFER, fb);
+    return fb;
 }
