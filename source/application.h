@@ -59,6 +59,7 @@ class Application {
     // Event callbacks
     static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
     static void mouseButtonCallback(GLFWwindow *win, int button, int action, int mods);
+    static void windowSizeCallback(GLFWwindow* win, int width, int height);
 
     // Internal struct to hold state values
     struct State {

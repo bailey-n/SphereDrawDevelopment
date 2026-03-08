@@ -15,8 +15,8 @@ class Camera {
     unsigned int change_bits = 2;
 
 public:
-    uint32_t scr_width;
-    uint32_t scr_height;
+    int scr_width;
+    int scr_height;
 
     Camera();
     explicit Camera(const glm::mat4& projection);
@@ -39,6 +39,7 @@ public:
 
     void move_to(const glm::vec3& new_position, bool lock_camera = true);
     void look_at(const glm::vec3& location);
+    void update_window(GLFWwindow* window);
 
     [[nodiscard]] bool bind(GLuint program, const glm::mat4& model) const;
     bool pop_change();

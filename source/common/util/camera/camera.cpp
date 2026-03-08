@@ -1,4 +1,5 @@
 #include "camera.h"
+#include <iostream>
 
 Camera::Camera() :
 position(0.0f, 0.0f, 0.0f), target(1.0f, 0.0f, 0.0f), up(0.0f, 1.0f, 0.0f),
@@ -142,6 +143,13 @@ bool Camera::bind(GLuint program, const glm::mat4 &model) const {
         glUniform3fv(cameraPositionID, 1, glm::value_ptr(this->position));
     }
     return true;
+}
+
+void Camera::update_window(GLFWwindow *window) {
+    glfwGetWindowSize(window, &scr_width, &scr_height);
+    set_projection(glm::perspective(glm::radians(60.0f), (float)scr_width / (float)scr_height, 0.1f, 100.0f));
+    glViewport(0, 0, scr_width, scr_height);
+    // std::cout << scr_width << " " << scr_height << std::endl;
 }
 
 bool Camera::pop_change() {
