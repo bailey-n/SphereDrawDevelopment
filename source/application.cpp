@@ -12,8 +12,8 @@
 
 
 // Static variable initialization
-const int Application::w_width = 2400; //sean changed for ui testing (OG = 1200)
-const int Application::w_height = 1800; //sean changed for ui testing (OG = 900)
+const int Application::w_width = 1200; //sean changed for ui testing (OG = 1200)
+const int Application::w_height = 900; //sean changed for ui testing (OG = 900)
 GLFWwindow* Application::window = nullptr;
 bool Application::initialized = false;
 bool Application::gui_change = true;
@@ -88,6 +88,7 @@ void Application::bind_input_callbacks() {
     glfwSetCursorPos(window, width / 2.0, height / 2.0);
     glfwSetKeyCallback(window, keyCallback);
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
+    glfwSetWindowSizeCallback(window, windowSizeCallback);
 }
 
 void Application::set_gl_preferences() {
@@ -140,10 +141,9 @@ camera({2.0f, 0.0f, 0.0f},
        {0.0f, 1.0f, 0.0f},
        glm::perspective(glm::radians(60.0f), 4.0f / 3.0f, 0.1f, 100.0f)
        ){
-    renderer.init();
-    camera.scr_width = w_width;
-    camera.scr_height = w_height;
     if (!initialized) return;
+    renderer.init();
+    camera.update_window(window);
     // connect project memory -> render cubemap pipeline
     project.attachCubemap(&renderer);
     // ensure renderer matches current project state on startup
@@ -189,56 +189,14 @@ void Application::mouseButtonCallback(GLFWwindow *win, int button, int action, i
     }
 }
 
+void Application::windowSizeCallback(GLFWwindow *win, int width, int height) {
+    event_queue.emplace_back(WINDOW_RESIZE);
+}
+
 // ################################################## //
 
 // APPLICATION MAINLOOP
 void Application::mainloop() {
-    // FOR TESTING SPEED & STABILITY
-//    PointPrimitive test_point(0);
-//    std::random_device rd;
-//    std::default_random_engine rng(rd());
-//    std::uniform_real_distribution<float> long_dist(-M_PI, M_PI);
-//    std::uniform_real_distribution<float> lat_dist(-M_PI/2.0, M_PI/2.0);
-//    std::uniform_real_distribution<float> color_dist(0.0f, 1.0f);
-//    std::vector<CubeMapId> ids;
-//     for (int i = 0; i < 50; i++) {
-//         test_point.p = lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f);
-//         test_point.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
-//         ids.emplace_back(renderer.add_new_point(test_point));
-//     }
-    // for (int i = 0; i < 500; i++) {
-    //     std::shuffle(ids.begin(), ids.end(), rng);
-    //     for (auto id: ids) {
-    //         renderer.remove_point(id);
-    //     }
-    // }
-    // for (int i = 0; i < 250; i++) {
-    //     test_point.p = lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f);
-    //     test_point.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
-    //     ids.emplace_back(renderer.add_new_point(test_point));
-    // }
-//    for (int i = 0; i < 500; i++) {
-//        PolylinePrimitive test_line(0);
-//        test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
-//        test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
-//        test_line.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
-//        ids.emplace_back(renderer.add_new_line(test_line));
-//    }
-//    test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
-//    test_line.verts.emplace_back(lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f));
-//    test_line.color = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-//    ids.emplace_back(renderer.add_new_line(test_line));
-
-//    for (int i = 0; i < 50; i++) {
-//        test_point.p = lat_lon_to_xyz(lat_dist(rng), long_dist(rng), 1.0f);
-//        test_point.color = glm::vec4(color_dist(rng), color_dist(rng), color_dist(rng), 1.0f);
-//        ids.emplace_back(renderer.add_new_point(test_point));
-//    }
-    // renderer.reset();
-    // END TEST
-    // test_mesh.emplace();
-    // test_mesh->update_texture();
-
     constexpr double rotations_per_second = 0.5;
     constexpr unsigned int FPS = 60;
     const double TARGET_FRAME_TIME = 1.0 / (double)FPS;
@@ -446,6 +404,10 @@ void Application::handle_event(const AppAction &action) {
             std::cout << "New draw state: " << static_cast<int>(state.draw_mode) << std::endl;
             break;
 
+        case WINDOW_RESIZE:
+            camera.update_window(window);
+            break;
+
         default:
             break;
     }
@@ -498,11 +460,6 @@ void Application::update_window() {
 }
 
 void Application::render_frame() {
-//    if (camera.pop_change() || ImGui::GetIO().WantCaptureMouse) {
-//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//        planet.draw(camera);
-//    }
-
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();

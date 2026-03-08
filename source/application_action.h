@@ -25,6 +25,7 @@ enum AppAction {
     CAMERA_RESET,
     CLICK_SPHERE,
     DRAW_MODE_ROTATE,
+    WINDOW_RESIZE,
 };
 
 #endif //APPLICATION_ACTION_H
