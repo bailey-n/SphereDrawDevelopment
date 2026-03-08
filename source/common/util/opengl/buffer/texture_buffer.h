@@ -5,12 +5,7 @@
 #ifndef SPHEREDRAW_TEXTURE_BUFFER_H
 #define SPHEREDRAW_TEXTURE_BUFFER_H
 
-#include <glm/gtc/type_ptr.hpp>
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include "opengl_include.h"
 #include <cstdint>
 #include <vector>
 

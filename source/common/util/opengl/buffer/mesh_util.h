@@ -1,15 +1,10 @@
 #ifndef MESH_UTIL_H
 #define MESH_UTIL_H
 
-#include <vector>
-#include "glm/gtc/type_ptr.hpp"
-#include "GL/glew.h"
-#include "GLFW/glfw3.h"
-#include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
-#include "glm/gtc/type_ptr.hpp"
-#include <string>
+#include "opengl_include.h"
 #include "camera.h"
+#include <vector>
+#include <string>
 #include <iostream>
 
 template <typename T>

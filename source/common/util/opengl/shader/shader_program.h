@@ -1,6 +1,7 @@
 #ifndef SHADER_PROGRAM_H
 #define SHADER_PROGRAM_H
 
+#include "opengl_include.h"
 #include "shader_file.h"
 
 struct shaderProgram {

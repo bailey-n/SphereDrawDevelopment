@@ -5,11 +5,8 @@
 #ifndef VERTEX_MANIPULATION_H
 #define VERTEX_MANIPULATION_H
 
+#include "opengl_include.h"
 #include <vector>
-#include <glm/gtc/type_ptr.hpp>
-#include <GL/glew.h>
-#include <glm/gtc/type_ptr.hpp>
-#include <GL/glew.h>
 
 constexpr float MAX_SUBDIV_WIDTH = M_PI_2 - std::acos(std::sqrt(1.0 / 3.0));
 

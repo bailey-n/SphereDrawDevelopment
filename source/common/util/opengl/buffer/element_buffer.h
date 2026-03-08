@@ -1,22 +1,17 @@
 #ifndef ELEMENT_BUFFER_H
 #define ELEMENT_BUFFER_H
 
-#include <vector>
-#include <glm/gtc/type_ptr.hpp>
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <string>
+#include "opengl_include.h"
 #include "mesh_util.h"
+#include <vector>
+#include <string>
 
 template <typename T>
 struct elementBufferT {
     std::vector<T> indices;
     GLuint ebo;
 
-    elementBufferT(const std::vector<T>& indices_) :
+    explicit elementBufferT(const std::vector<T>& indices_) :
         indices(indices_), ebo(gen_ebo<T>(
         (long long)indices.size(),(void*)indices.data())
     ) {}

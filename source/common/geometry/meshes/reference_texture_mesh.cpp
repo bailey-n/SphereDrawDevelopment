@@ -3,7 +3,6 @@
 //
 
 #include "reference_texture_mesh.h"
-#include "cubeface.h"
 #include "shader_manager.h"
 
 glm::mat4x4 ReferenceTextureMesh::MVP = (

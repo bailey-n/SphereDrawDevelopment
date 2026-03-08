@@ -5,20 +5,17 @@
 #ifndef SPHEREDRAW_CUBEMAP_H
 #define SPHEREDRAW_CUBEMAP_H
 
-#include <GL/glew.h>
-#include <vector>
-#include "drawing/primitive.h"
-#include "drawing/layer.h"
+#include "opengl_include.h"
+#include "cubemap_util.h"
+#include "cubeface.h"
 #include "primitive.h"
 #include "layer.h"
+#include <vector>
 #include <cstdint>
 #include <climits>
 #include <set>
 #include <queue>
 #include <map>
-
-#include "cubemap_util.h"
-#include "cubeface.h"
 
 class Cubemap {
     // Attributes/methods for assigning reference ids for external code

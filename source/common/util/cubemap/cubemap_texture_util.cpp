@@ -1,8 +1,10 @@
 #include "cubemap_texture_util.h"
+#include "mesh_util.h"
 #include <unistd.h>
 #include <deque>
 #include <map>
 #include <optional>
+#include <iostream>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"

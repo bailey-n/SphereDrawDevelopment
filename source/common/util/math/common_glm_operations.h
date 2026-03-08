@@ -5,13 +5,8 @@
 #ifndef SPHEREDRAW_COMMON_GLM_OPERATIONS_H
 #define SPHEREDRAW_COMMON_GLM_OPERATIONS_H
 
+#include "opengl_include.h"
 #include <vector>
-#include <glm/gtc/type_ptr.hpp>
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include <string>
 #include <climits>
 #include <optional>

@@ -1,10 +1,10 @@
 #ifndef SHAPES_H
 #define SHAPES_H
 
-#include <vector>
-#include <glm/gtc/type_ptr.hpp>
-#include <optional>
+#include "opengl_include.h"
 #include "cubemap_util.h"
+#include <vector>
+#include <optional>
 
 struct SphereMeshData {
     std::vector<glm::vec3> positions;

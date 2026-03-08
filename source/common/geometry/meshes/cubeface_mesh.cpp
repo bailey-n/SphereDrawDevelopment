@@ -7,6 +7,7 @@
 #include "shapes.h"
 #include "common_glm_operations.h"
 #include "drawn_mesh.h"
+#include "mesh_util.h"
 
 CubeFaceMesh::CubeFaceMesh(CubeFaceNum face):
 VAO(gen_vao_and_bind()), frame_buffer(-1),

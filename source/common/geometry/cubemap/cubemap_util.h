@@ -9,13 +9,10 @@
 #define InvalidId UINT32_MAX
 #define MaxFeatureCt 0xfffffffeU
 
+#include "opengl_include.h"
 #include <cstdint>
 #include <climits>
 #include <vector>
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include <string>
 
 using CubeMapId = uint32_t;

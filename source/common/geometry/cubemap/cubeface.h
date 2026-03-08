@@ -5,15 +5,15 @@
 #ifndef SPHEREDRAW_CUBEFACE_H
 #define SPHEREDRAW_CUBEFACE_H
 
-#include <GL/glew.h>
+#include "opengl_include.h"
 #include "cubemap_util.h"
-#include "drawing/primitive.h"
-#include <map>
-#include <queue>
+#include "primitive.h"
 #include "cubeface_mesh.h"
 #include "drawn_mesh.h"
-#include <optional>
 #include "reference_texture_mesh.h"
+#include <map>
+#include <queue>
+#include <optional>
 
 class CubeFace {
     CubeFaceNum face;

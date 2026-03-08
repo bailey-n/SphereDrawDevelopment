@@ -5,13 +5,13 @@
 #ifndef SPHEREDRAW_CUBEFACE_MESH_H
 #define SPHEREDRAW_CUBEFACE_MESH_H
 
+#include "opengl_include.h"
 #include "texture_buffer.h"
 #include "element_buffer.h"
 #include "vertex_attribute.h"
-#include "basic_mesh.h"
 #include "drawn_mesh.h"
-#include <optional>
 #include "reference_texture_mesh.h"
+#include <optional>
 
 class CubeFaceMesh {
     static constexpr int WIDTH = 1024;
@@ -32,7 +32,7 @@ class CubeFaceMesh {
     CubeFaceNum face;
 
 public:
-    CubeFaceMesh(CubeFaceNum face);
+    explicit CubeFaceMesh(CubeFaceNum face);
     ~CubeFaceMesh();
     void update_texture(const std::optional<ReferenceTextureMesh>& reference_texture, const std::vector<DrawnMesh*>& texture_meshes) const;
     void draw(const Camera& camera);

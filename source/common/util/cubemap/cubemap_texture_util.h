@@ -1,8 +1,8 @@
 #ifndef CUBEMAP_UTIL_H
 #define CUBEMAP_UTIL_H
 
+#include "opengl_include.h"
 #include <vector>
-#include <glm/gtc/type_ptr.hpp>
 #include "shapes.h"
 #include <map>
 #include <stack>

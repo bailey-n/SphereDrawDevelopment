@@ -1,7 +1,7 @@
 # CMake entry point
 cmake_minimum_required (VERSION 3.10.0)
 project (SphereDraw)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 26)
 
 find_package(OpenGL REQUIRED)
 
@@ -94,8 +94,6 @@ add_executable(SphereDraw
         source/common/util/opengl/shader/shader_program.h
         source/common/geometry/drawing/primitive_id_manager.h
         source/common/geometry/drawing/primitive_id_manager.cpp
-        source/common/geometry/meshes/basic_mesh.h
-        source/common/geometry/meshes/basic_mesh.cpp
         source/common/geometry/cubemap/cubemap_util.h
         source/common/geometry/cubemap/cubeface.h
         source/common/geometry/cubemap/cubeface.cpp
@@ -108,12 +106,11 @@ add_executable(SphereDraw
         source/common/geometry/meshes/cubeface_mesh.cpp
         source/common/util/opengl/buffer/texture_buffer.h
         source/common/util/opengl/buffer/texture_buffer.cpp
-        source/common/util/opengl/buffer/frame_buffer.h
-        source/common/util/opengl/buffer/frame_buffer.cpp
         source/common/geometry/meshes/drawn_mesh.cpp
         source/common/geometry/meshes/drawn_mesh.h
         source/common/geometry/meshes/reference_texture_mesh.cpp
         source/common/geometry/meshes/reference_texture_mesh.h
+        source/common/util/opengl/opengl_include.h
 
         # NEW INCLUDES (Organize later)
 )
