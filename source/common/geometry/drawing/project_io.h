@@ -6,6 +6,7 @@
 #include <chrono>
 #include <ctime>
 #include <cstdio>
+#include <filesystem>
 
 #include <nlohmann/json.hpp>
 #include <glm/glm.hpp>
@@ -182,6 +183,11 @@ inline void SaveProjectToFile(Project& project, const std::string& filepath){
     for(const auto& kv : project.primitives){
         j["primitives"].push_back(primitiveToJson(*kv.second));
     }
+
+    // make sure the folder exists
+    std::filesystem::path p(filepath);
+    if (p.has_parent_path()) std::filesystem::create_directories(p.parent_path());
+
 
     std::ofstream out(filepath);
     if (!out) throw std::runtime_error("Failed to open file for writing: " + filepath);

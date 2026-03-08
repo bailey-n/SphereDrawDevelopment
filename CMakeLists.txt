@@ -22,6 +22,19 @@ set(ALL_LIBS
         GLEW_1130
 )
 
+# ---- Native File Dialog (Windows) ----
+add_library(nfd STATIC
+        external/nfd/nfd_win.cpp
+)
+
+target_include_directories(nfd PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/nfd/include
+)
+
+# Windows system libs NFD needs
+target_link_libraries(nfd PUBLIC comdlg32 ole32 uuid)
+
+
 add_definitions(
         -DTW_STATIC
         -DTW_NO_LIB_PRAGMA
@@ -116,6 +129,7 @@ add_executable(SphereDraw
 )
 target_link_libraries(SphereDraw
         ${ALL_LIBS}
+        nfd
 )
 target_include_directories(SphereDraw PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/external

@@ -23,6 +23,7 @@ class Application {
     const static int w_height;
     static GLFWwindow* window;
     static bool initialized;
+    static bool nfd_initialized;
     static bool gui_change;
     static std::deque<AppAction> event_queue;
     // Maps key, modifier bits to an associated shortcut action
@@ -80,10 +81,28 @@ class Application {
             None = 0,
             Point = 1,
             Polyline = 2,
+            Polygon = 3
         };
-        unsigned char draw_mode = Point;
+        DrawMode draw_mode = None;
     };
     State state;
+
+    //Point tool states
+    struct PointToolState {
+        bool show_panel = false;          // show point tool UI panel
+        bool armed_for_placement = false; // next sphere click places a point
+        bool show_color_picker_window = false;
+        glm::vec4 color = glm::vec4(1.0f, 0.2f, 0.2f, 1.0f);
+        float size = 0.007f;              // matches PointPrimitive default
+    };
+
+    PointToolState point_tool;
+
+    struct OutlinerState {
+        bool show_panel = true;
+        int selected_primitive_index = -1; // index into project.primitives (or whatever accessor you have)
+    };
+    OutlinerState outliner;
 
 public:
     static bool init();
