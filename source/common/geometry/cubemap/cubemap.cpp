@@ -144,11 +144,11 @@ void Cubemap::draw(const Camera &camera) {
                 if (primitive.face_flags & flagSouth) cube_faces[South].queue_draw(primitive.id);
             }
         }
-        drawing_updated = false;
     }
     for (auto& face: cube_faces) {
-        face.draw(camera);
+        face.draw(camera, drawing_updated);
     }
+    if (drawing_updated) drawing_updated = false;
 }
 
 ObjectType Cubemap::get_object_type(CubeMapId cmap_id) const {
