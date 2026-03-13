@@ -64,13 +64,13 @@ void CubeFaceMesh::update_texture(const std::optional<ReferenceTextureMesh>& ref
     glViewport(0, 0, texture.width, texture.height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    std::cout << "Drawing reference texture" << std::endl;
+    // std::cout << "Drawing reference texture" << std::endl;
     if (reference_texture.has_value()) {
         reference_texture->draw_texture();
     }
 
     for (auto mesh: texture_meshes) {
-        std::cout << "Drawing mesh" << std::endl;
+        // std::cout << "Drawing mesh" << std::endl;
         mesh->draw_texture();
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
