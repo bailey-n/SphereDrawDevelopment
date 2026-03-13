@@ -88,20 +88,23 @@ class Application {
     };
     State state;
 
-    //Point tool states
+    // Point tool state
     struct PointToolState {
         bool show_panel = false;          // show point tool UI panel
         bool armed_for_placement = false; // next sphere click places a point
-        bool show_color_picker_window = false;
         glm::vec4 color = glm::vec4(1.0f, 0.2f, 0.2f, 1.0f);
         float size = 0.007f;              // matches PointPrimitive default
+        ImVec2 panel_size = ImVec2(0.0f, 0.0f);
     };
 
     PointToolState point_tool;
 
     struct OutlinerState {
-        bool show_panel = true;
-        int selected_primitive_index = -1; // index into project.primitives (or whatever accessor you have)
+        bool collapsed = false;
+        uint32_t selected_primitive_id = 0;
+        uint32_t name_buffer_primitive_id = 0;
+        char name_buffer[256] = {};
+        ImVec2 panel_size = ImVec2(0.0f, 0.0f);
     };
     OutlinerState outliner;
 

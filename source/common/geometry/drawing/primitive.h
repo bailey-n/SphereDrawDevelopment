@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <vector>
 #include <glm/glm.hpp>
+#include <string>
 
 //What kind of drawable object is this?
 enum class PrimitiveType : uint8_t {
@@ -11,20 +12,24 @@ enum class PrimitiveType : uint8_t {
     Polygon
 };
 
-//Minimal base class: ID + type
+// Minimal base class: ID + type + user-facing name
 class Primitive {
 public:
     Primitive(uint32_t id, PrimitiveType type)
-        : id_(id), type_(type) {}
+            : id_(id), type_(type) {}
 
     virtual ~Primitive() = default;
 
-    uint32_t getID() const { return id_;}
-    PrimitiveType getType() const { return type_;}
+    uint32_t getID() const { return id_; }
+    PrimitiveType getType() const { return type_; }
+
+    const std::string& getName() const { return name_; }
+    void setName(const std::string& name) { name_ = name; }
 
 private:
     uint32_t id_;
     PrimitiveType type_;
+    std::string name_;
 };
 
 // Concrete primitives
