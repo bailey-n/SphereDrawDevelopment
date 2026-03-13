@@ -44,6 +44,7 @@ texture(), model(1.0f), program(-1), face(face)
 }
 
 CubeFaceMesh::~CubeFaceMesh() {
+    // std::cout << "Deleted CubeFaceMesh" << std::endl;
     glDeleteFramebuffers(1, &frame_buffer);
     glDeleteVertexArrays(1, &VAO);
 }
@@ -51,22 +52,25 @@ CubeFaceMesh::~CubeFaceMesh() {
 void CubeFaceMesh::update_texture(const std::optional<ReferenceTextureMesh>& reference_texture, const std::vector<DrawnMesh*>& texture_meshes) const {
     glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
 
-    // GLint textureId;
-    // glGetFramebufferAttachmentParameteriv(
-    //     GL_FRAMEBUFFER,
-    //     GL_COLOR_ATTACHMENT0, // Or other attachment point
-    //     GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME,
-    //     &textureId
-    // );
-    // std::cout << textureId << std::endl;
+//     GLint textureId;
+//     glGetFramebufferAttachmentParameteriv(
+//         GL_FRAMEBUFFER,
+//         GL_COLOR_ATTACHMENT0, // Or other attachment point
+//         GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME,
+//         &textureId
+//     );
+//     std::cout << textureId << std::endl;
 
     glViewport(0, 0, texture.width, texture.height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    // std::cout << "Drawing reference texture" << std::endl;
     if (reference_texture.has_value()) {
         reference_texture->draw_texture();
     }
+
     for (auto mesh: texture_meshes) {
+        // std::cout << "Drawing mesh" << std::endl;
         mesh->draw_texture();
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

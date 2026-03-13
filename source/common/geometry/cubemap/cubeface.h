@@ -31,7 +31,7 @@ public:
     bool remove_drawn_primitive(CubeMapId id);
 
     void queue_draw(CubeMapId id);
-    void draw(const Camera& camera);
+    void draw(const Camera& camera, bool updated);
 };
 
 

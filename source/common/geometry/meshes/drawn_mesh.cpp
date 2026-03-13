@@ -72,6 +72,7 @@ void DrawnMesh::update_all() {
 }
 
 DrawnMesh::~DrawnMesh() {
+    // std::cout << "Deleted DrawnMesh" << std::endl;
     glDeleteVertexArrays(1, &VAO);
 }
 
