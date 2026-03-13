@@ -69,6 +69,11 @@ public:
         return true;
     }
 
+    std::string makeDefaultPrimitiveName(PrimitiveType type, uint32_t exclude_id = 0) const {
+        return primitiveTypeDisplayName(type) + " " +
+               std::to_string(countPrimitivesOfType(type, exclude_id) + 1);
+    }
+
 
 
     // Primitive insertion helpers
@@ -76,6 +81,8 @@ public:
     // Returns the primitive ID
     uint32_t addPrimitiveToDefaultLayer(std::unique_ptr<Primitive> p){
         ensureDefaultLayer();
+        ensurePrimitiveHasName(*p);
+
         const uint32_t id = p->getID();
         primitives[id] = std::move(p);
         layers[0].primitiveIDs.push_back(id);
@@ -95,6 +102,7 @@ public:
 
     //Adds a primitive but does not attach it to a layer (should be useful for loading)
     void addPrimitive(std::unique_ptr<Primitive> p){
+        ensurePrimitiveHasName(*p);
         primitives[p->getID()] = std::move(p);
     }
 
@@ -136,6 +144,34 @@ public:
 
 
 private:
+
+    static std::string primitiveTypeDisplayName(PrimitiveType type) {
+        switch (type) {
+            case PrimitiveType::Point: return "Point";
+            case PrimitiveType::Polyline: return "Polyline";
+            case PrimitiveType::Polygon: return "Polygon";
+            default: return "Primitive";
+        }
+    }
+
+    size_t countPrimitivesOfType(PrimitiveType type, uint32_t exclude_id = 0) const {
+        size_t count = 0;
+        for (const auto& [id, primitive] : primitives) {
+            if (!primitive) continue;
+            if (id == exclude_id) continue;
+            if (primitive->getType() == type) {
+                ++count;
+            }
+        }
+        return count;
+    }
+
+    void ensurePrimitiveHasName(Primitive& primitive) {
+        if (primitive.getName().empty()) {
+            primitive.setName(makeDefaultPrimitiveName(primitive.getType(), primitive.getID()));
+        }
+    }
+
     uint32_t nextLayerID_ = 1;
     Cubemap* cubemap_ = nullptr; // non-owning pointer to the active renderer-side cubemap
 };

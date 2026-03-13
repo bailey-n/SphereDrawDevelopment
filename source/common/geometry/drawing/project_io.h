@@ -77,6 +77,7 @@ inline json primitiveToJson(const Primitive& p){
     json j;
     j["id"] = p.getID();
     j["type"] = primTypeToString(p.getType());
+    j["name"] = p.getName();
 
     //For each derived type, write the fields that recreate it
     if (p.getType() == PrimitiveType::Point){
@@ -110,16 +111,18 @@ inline std::unique_ptr<Primitive> primitiveFromJson(const json& j){
 
     if (t == PrimitiveType::Point){
         auto p = std::make_unique<PointPrimitive>(id);
+        p->setName(j.value("name", std::string("")));
         p->color = json_to_vec4(j.at("color_rgba"));
-        p->size = j.value("size", 3.0f);
+        p->size = j.value("size", 0.007f);
         p->p = json_to_vec3(j.at("p"));
         return p;
     }
 
     if (t == PrimitiveType::Polyline){
         auto p = std::make_unique<PolylinePrimitive>(id);
+        p->setName(j.value("name", std::string("")));
         p->color = json_to_vec4(j.at("color_rgba"));
-        p->width = j.value("width", 2.0f);
+        p->width = j.value("width", 0.007f);
         p->closed = j.value("closed", false);
         for (const auto& vj : j.at("verts")) p->verts.push_back(json_to_vec3(vj));
         return p;
@@ -127,6 +130,7 @@ inline std::unique_ptr<Primitive> primitiveFromJson(const json& j){
 
     if (t == PrimitiveType::Polygon){
         auto p = std::make_unique<PolygonPrimitive>(id);
+        p->setName(j.value("name", std::string("")));
         p->color = json_to_vec4(j.at("color_rgba"));
         for (const auto& vj : j.at("verts")) p->verts.push_back(json_to_vec3(vj));
         return p;
