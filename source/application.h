@@ -99,6 +99,18 @@ class Application {
 
     PointToolState point_tool;
 
+    //Polyline tool state
+    struct PolylineToolState {
+        bool show_panel = false;
+        bool armed_for_placement = false;
+        glm::vec4 color = glm::vec4(0.20f, 0.75f, 1.0f, 1.0f);
+        float width = 0.007f;
+        std::vector<glm::vec3> verts;
+        ImVec2 panel_size = ImVec2(0.0f, 0.0f);
+    };
+
+    PolylineToolState polyline_tool;
+
     struct OutlinerState {
         bool collapsed = false;
         uint32_t selected_primitive_id = 0;
@@ -122,6 +134,7 @@ private:
     void update_window();
     void handle_event(const AppAction& action);
     void render_frame();
+    void refreshPolylinePreview();
 };
 
 #endif //APPLICATION_H

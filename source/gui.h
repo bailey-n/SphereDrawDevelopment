@@ -21,10 +21,17 @@ enum class DrawMenuAction {
     SelectPolygon
 };
 
+enum class CubemapMenuAction {
+    None,
+    ImportCubemap,
+    ExportCubemap
+};
+
 // Result from the menu bar: what action + (optional) chosen path from file dialog
 struct MainMenuResult {
     ProjectMenuAction projectAction = ProjectMenuAction::None;
     DrawMenuAction drawAction = DrawMenuAction::None;
+    CubemapMenuAction cubemapAction = CubemapMenuAction::None;
     std::string chosenPath;  // empty if user cancelled or no dialog used
     std::string errorMessage;
 };

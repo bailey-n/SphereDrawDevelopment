@@ -151,6 +151,10 @@ namespace {
         return primitiveFallbackLabel(primitive);
     }
 
+    bool drawNormalizedWidthSlider(const char* id, float& width) {
+        return drawNormalizedSizeSlider(id, width);
+    }
+
     void drawPinnedResizeHandle(
             const char* id,
             ImVec2& panel_size,
@@ -450,6 +454,11 @@ Application::~Application() {
 
 
 void Application::keyCallback(GLFWwindow *win, int key, int scancode, int action, int mods) {
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.WantCaptureKeyboard || io.WantTextInput) {
+        return;
+    }
+
     if (action == GLFW_PRESS) {
         if (press_key_actions.contains({key, mods})) {
             event_queue.emplace_back(press_key_actions.at({key, mods}));
@@ -647,7 +656,16 @@ void Application::handle_event(const AppAction &action) {
                 }
 
                 case State::DrawMode::Polyline:
+                {
+                    if (!polyline_tool.armed_for_placement) {
+                        break;
+                    }
+
+                    glm::vec3 pos = lat_lon_to_xyz(click_coords.first, click_coords.second, 1.0f);
+                    polyline_tool.verts.push_back(pos);
+                    refreshPolylinePreview();
                     break;
+                }
 
                 case State::DrawMode::Polygon:
                     break;
@@ -732,6 +750,32 @@ void Application::update_window() {
     }
 }
 
+void Application::refreshPolylinePreview() {
+    project.rebuildAttachedCubemapFromProject();
+
+    if (polyline_tool.verts.empty()) {
+        return;
+    }
+
+    // Preview clicked vertices as temporary points
+    for (size_t i = 0; i < polyline_tool.verts.size(); ++i) {
+        PointPrimitive preview_point(4000000000u - static_cast<uint32_t>(i));
+        preview_point.p = polyline_tool.verts[i];
+        preview_point.color = polyline_tool.color;
+        preview_point.size = std::clamp(polyline_tool.width * 0.4f, 0.008f, 0.03f);
+        renderer.add_new_point(preview_point);
+    }
+
+    // Preview the in-progress line once we have at least 2 vertices
+    if (polyline_tool.verts.size() >= 2) {
+        PolylinePrimitive preview_line(3900000000u);
+        preview_line.color = polyline_tool.color;
+        preview_line.width = polyline_tool.width;
+        preview_line.verts = polyline_tool.verts;
+        renderer.add_new_line(preview_line);
+    }
+}
+
 void Application::render_frame() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -755,21 +799,51 @@ void Application::render_frame() {
             state.draw_mode = State::DrawMode::Point;
             point_tool.show_panel = true;
             point_tool.armed_for_placement = false;
+
+            polyline_tool.show_panel = false;
+            polyline_tool.armed_for_placement = false;
+            polyline_tool.verts.clear();
+            project.rebuildAttachedCubemapFromProject();
             break;
 
         case DrawMenuAction::SelectPolyline:
             state.draw_mode = State::DrawMode::Polyline;
             point_tool.show_panel = false;
             point_tool.armed_for_placement = false;
+
+            polyline_tool.show_panel = true;
+            polyline_tool.armed_for_placement = false;
+            polyline_tool.verts.clear();
+            project.rebuildAttachedCubemapFromProject();
             break;
 
         case DrawMenuAction::SelectPolygon:
             state.draw_mode = State::DrawMode::Polygon;
             point_tool.show_panel = false;
             point_tool.armed_for_placement = false;
+
+            polyline_tool.show_panel = false;
+            polyline_tool.armed_for_placement = false;
+            polyline_tool.verts.clear();
+            project.rebuildAttachedCubemapFromProject();
             break;
 
         case DrawMenuAction::None:
+            break;
+    }
+
+    switch (menu.cubemapAction) {
+        case CubemapMenuAction::ImportCubemap:
+            project_status = "Cubemap import is not implemented yet.";
+            show_project_status = true;
+            break;
+
+        case CubemapMenuAction::ExportCubemap:
+            project_status = "Cubemap export is not implemented yet.";
+            show_project_status = true;
+            break;
+
+        case CubemapMenuAction::None:
             break;
     }
 
@@ -844,6 +918,9 @@ void Application::render_frame() {
     if (point_tool.panel_size.x <= 0.0f || point_tool.panel_size.y <= 0.0f) {
         point_tool.panel_size = ImVec2(left_panel_width, 500.0f * ui_scale);
     }
+    if (polyline_tool.panel_size.x <= 0.0f || polyline_tool.panel_size.y <= 0.0f) {
+        polyline_tool.panel_size = ImVec2(left_panel_width, 560.0f * ui_scale);
+    }
 
     if (outliner.panel_size.x <= 0.0f || outliner.panel_size.y <= 0.0f) {
         outliner.panel_size = ImVec2(right_panel_width, max_panel_height);
@@ -851,6 +928,9 @@ void Application::render_frame() {
 
     point_tool.panel_size.x = std::clamp(point_tool.panel_size.x, 280.0f * ui_scale, viewport->WorkSize.x * 0.45f);
     point_tool.panel_size.y = std::clamp(point_tool.panel_size.y, 330.0f * ui_scale, max_panel_height);
+
+    polyline_tool.panel_size.x = std::clamp(polyline_tool.panel_size.x, 280.0f * ui_scale, viewport->WorkSize.x * 0.45f);
+    polyline_tool.panel_size.y = std::clamp(polyline_tool.panel_size.y, 380.0f * ui_scale, max_panel_height);
 
     outliner.panel_size.x = std::clamp(outliner.panel_size.x, 300.0f * ui_scale, viewport->WorkSize.x * 0.50f);
     outliner.panel_size.y = std::clamp(outliner.panel_size.y, 500.0f * ui_scale, max_panel_height);
@@ -931,6 +1011,122 @@ void Application::render_frame() {
 
     if (!point_tool.show_panel) {
         point_tool.armed_for_placement = false;
+    }
+
+    //Polyline Tool Panel
+    if (polyline_tool.show_panel) {
+        ImGui::SetNextWindowPos(ImVec2(viewport->WorkPos.x + panel_margin, panel_y), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(polyline_tool.panel_size, ImGuiCond_Always);
+        ImGui::SetNextWindowBgAlpha(0.96f);
+
+        ImGuiWindowFlags polylineToolFlags =
+                ImGuiWindowFlags_NoMove |
+                ImGuiWindowFlags_NoResize |
+                ImGuiWindowFlags_NoCollapse;
+
+        if (ImGui::Begin("Polyline Tool", &polyline_tool.show_panel, polylineToolFlags)) {
+            polyline_tool.panel_size = ImGui::GetWindowSize();
+            bool preview_changed = false;
+
+            ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x);
+            ImGui::TextDisabled("%s", "Create a line by placing vertices on the globe, then finish the polyline.");
+            ImGui::PopTextWrapPos();
+            ImGui::Spacing();
+
+            ImGui::TextUnformatted("Color");
+            ImGui::SetNextItemWidth(-1.0f);
+            preview_changed |= ImGui::ColorEdit4(
+                    "##PolylineToolColor",
+                    glm::value_ptr(polyline_tool.color),
+                    ImGuiColorEditFlags_NoInputs |
+                    ImGuiColorEditFlags_AlphaBar |
+                    ImGuiColorEditFlags_AlphaPreviewHalf
+            );
+
+            ImGui::Spacing();
+            ImGui::TextUnformatted("Line Width");
+            preview_changed |= drawNormalizedWidthSlider("##PolylineToolWidth", polyline_tool.width);
+            drawSliderExtentsText("Thinner", "Thicker");
+
+            ImGui::Spacing();
+            ImGui::Text("Vertices: %d", static_cast<int>(polyline_tool.verts.size()));
+
+            ImGui::Spacing();
+            float button_width = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
+
+            if (ImGui::Button(polyline_tool.armed_for_placement ? "Adding Vertices" : "Start Polyline", ImVec2(button_width, 0.0f))) {
+                state.draw_mode = State::DrawMode::Polyline;
+                polyline_tool.armed_for_placement = true;
+                if (polyline_tool.verts.empty()) {
+                    polyline_tool.verts.clear();
+                }
+            }
+
+            ImGui::SameLine();
+            bool can_finish = polyline_tool.verts.size() >= 2;
+            if (!can_finish) ImGui::BeginDisabled();
+            if (ImGui::Button("Finish", ImVec2(button_width, 0.0f))) {
+                uint32_t newId = project.nextPrimitiveID();
+                auto line = std::make_unique<PolylinePrimitive>(newId);
+                line->color = polyline_tool.color;
+                line->width = polyline_tool.width;
+                line->verts = polyline_tool.verts;
+                line->setName(project.makeDefaultPrimitiveName(PrimitiveType::Polyline));
+
+                project.addPrimitiveToDefaultLayer(std::move(line));
+                project.rebuildAttachedCubemapFromProject();
+
+                outliner.selected_primitive_id = newId;
+                outliner.name_buffer_primitive_id = 0;
+
+                polyline_tool.armed_for_placement = false;
+                polyline_tool.verts.clear();
+            }
+            if (!can_finish) ImGui::EndDisabled();
+
+            ImGui::Spacing();
+            if (ImGui::Button("Cancel", ImVec2(-1.0f, 0.0f))) {
+                polyline_tool.armed_for_placement = false;
+                polyline_tool.verts.clear();
+                project.rebuildAttachedCubemapFromProject();
+            }
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Text("Mode: %s", drawModeLabel(static_cast<int>(state.draw_mode)));
+            ImGui::TextWrapped(
+                    "%s",
+                    polyline_tool.armed_for_placement
+                    ? "Status: active. Click the sphere to add vertices, then press Finish."
+                    : "Status: idle. Press Start Polyline to begin placing vertices."
+            );
+
+            if (preview_changed && polyline_tool.armed_for_placement && !polyline_tool.verts.empty()) {
+                refreshPolylinePreview();
+            }
+
+            drawPinnedResizeHandle(
+                    "##PolylineToolResizeHandle",
+                    polyline_tool.panel_size,
+                    ResizeHandleCorner::BottomRight,
+                    ui_scale,
+                    280.0f * ui_scale,
+                    380.0f * ui_scale,
+                    viewport->WorkSize.x * 0.45f,
+                    max_panel_height
+            );
+        }
+        ImGui::End();
+
+        if (!polyline_tool.show_panel) {
+            polyline_tool.armed_for_placement = false;
+            polyline_tool.verts.clear();
+            project.rebuildAttachedCubemapFromProject();
+        }
+    }
+
+    if (!polyline_tool.show_panel) {
+        polyline_tool.armed_for_placement = false;
     }
 
     // Primitives Panel
@@ -1079,7 +1275,30 @@ void Application::render_frame() {
                                 changed |= drawNormalizedSizeSlider("##SelectedPointSize", pt->size);
                                 drawSliderExtentsText("Smaller", "Larger");
                             }
-                        } else {
+                        }
+                        else if (base->getType() == PrimitiveType::Polyline) {
+                            auto* line = dynamic_cast<PolylinePrimitive*>(base);
+                            if (line) {
+                                ImGui::Text("Vertices: %d", static_cast<int>(line->verts.size()));
+
+                                ImGui::Spacing();
+                                ImGui::TextUnformatted("Color");
+                                ImGui::SetNextItemWidth(-1.0f);
+                                changed |= ImGui::ColorEdit4(
+                                        "##SelectedPolylineColor",
+                                        glm::value_ptr(line->color),
+                                        ImGuiColorEditFlags_NoInputs |
+                                        ImGuiColorEditFlags_AlphaBar |
+                                        ImGuiColorEditFlags_AlphaPreviewHalf
+                                );
+
+                                ImGui::Spacing();
+                                ImGui::TextUnformatted("Line Width");
+                                changed |= drawNormalizedWidthSlider("##SelectedPolylineWidth", line->width);
+                                drawSliderExtentsText("Thinner", "Thicker");
+                            }
+                        }
+                        else {
                             ImGui::TextWrapped("Editing for this primitive type isn't implemented yet.");
                         }
 

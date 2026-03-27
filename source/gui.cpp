@@ -142,6 +142,17 @@ MainMenuResult SphereDrawGUI::DrawMainMenuBar(std::string& filepath) {
             ImGui::EndMenu();
         }
 
+        //Cubemap import/export dropdown
+        if (ImGui::BeginMenu("Cubemap")) {
+            if (ImGui::MenuItem("Import Cubemap...")) {
+                result.cubemapAction = CubemapMenuAction::ImportCubemap;
+            }
+            if (ImGui::MenuItem("Export Cubemap...")) {
+                result.cubemapAction = CubemapMenuAction::ExportCubemap;
+            }
+            ImGui::EndMenu();
+        }
+
         if (ImGui::BeginMenu("Edit")) {
             if (ImGui::MenuItem("Undo", "CTRL+Z", false, false)) {}
             if (ImGui::MenuItem("Redo", "CTRL+Y", false, false)) {}

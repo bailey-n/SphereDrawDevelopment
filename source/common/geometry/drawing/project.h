@@ -87,14 +87,24 @@ public:
         primitives[id] = std::move(p);
         layers[0].primitiveIDs.push_back(id);
 
-        //makes point additions appear immediately
+        //makes primitive additions appear immediately
         if (cubemap_) {
             Primitive* base = primitives[id].get();
-            if (base && base->getType() == PrimitiveType::Point) {
+            if (!base) {
+                return id;
+            }
+
+            if (base->getType() == PrimitiveType::Point) {
                 if (auto* pt = dynamic_cast<PointPrimitive*>(base)) {
                     cubemap_->add_new_point(*pt);
                 }
             }
+            else if (base->getType() == PrimitiveType::Polyline) {
+                if (auto* line = dynamic_cast<PolylinePrimitive*>(base)) {
+                    cubemap_->add_new_line(*line);
+                }
+            }
+            //TODO: add polygon here next
         }
 
         return id;
@@ -130,14 +140,21 @@ public:
                 if (it == primitives.end() || !it->second) continue;
 
                 Primitive* base = it->second.get();
+
                 if (base->getType() == PrimitiveType::Point) {
                     auto* pt = dynamic_cast<PointPrimitive*>(base);
                     if (pt) {
                         cubemap_->add_new_point(*pt);
                     }
                 }
+                else if (base->getType() == PrimitiveType::Polyline) {
+                    auto* line = dynamic_cast<PolylinePrimitive*>(base);
+                    if (line) {
+                        cubemap_->add_new_line(*line);
+                    }
+                }
 
-                // TODO (next milestones): Polyline / Polygon / render-layer mapping
+                // TODO (next milestones): Polygon / render-layer mapping
             }
         }
     }
