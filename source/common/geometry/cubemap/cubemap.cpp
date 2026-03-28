@@ -252,3 +252,50 @@ CubeMapId Cubemap::add_new_line(const PolylinePrimitive& line, CubeMapId layer, 
     drawing_updated = true;
     return render_id;
 }
+
+bool Cubemap::remove_line(CubeMapId cmap_id) {
+    if (!active_ids.contains(cmap_id)) return false;
+    auto& info = primitive_map.at(cmap_id);
+    if (info.type != ObjectType::renderLine) return false;
+    auto flags = info.face_flags;
+
+    if (flags & flagNorth) { cube_faces[North].remove_drawn_primitive(cmap_id); }
+    if (flags & flagWest) { cube_faces[West].remove_drawn_primitive(cmap_id); }
+    if (flags & flagMeridian) { cube_faces[Meridian].remove_drawn_primitive(cmap_id); }
+    if (flags & flagEast) { cube_faces[East].remove_drawn_primitive(cmap_id); }
+    if (flags & flagAntiMeridian) { cube_faces[AntiMeridian].remove_drawn_primitive(cmap_id); }
+    if (flags & flagSouth) { cube_faces[South].remove_drawn_primitive(cmap_id); }
+
+    remove_element_from_parent_layer(cmap_id);
+    draw_order.erase(draw_order.begin()+get_global_object_render_position(cmap_id));
+    primitive_map.erase(cmap_id);
+    remove_id(cmap_id);
+    drawing_updated = true;
+    return true;
+}
+
+CubeMapId Cubemap::add_new_polygon(const PolygonPrimitive& polygon, CubeMapId layer, uint32_t position) {
+    if (layer != InvalidId && !primitive_map.contains(layer)) return InvalidId;
+    clamp_position(layer, position);
+
+    CubeMapId render_id = activate_new_id();
+    if (render_id == InvalidId) return InvalidId;
+
+    std::vector<glm::vec3> temp_positions;
+    std::vector<glm::u32vec3> temp_indices;
+    compose_polygon(polygon.verts, temp_positions, temp_indices);
+
+    // Add new line
+    CubeFaceFlags flags = 0;
+    if (cube_faces[North].add_new_drawn_primitive(render_id, polygon.color, temp_positions, temp_indices)) flags |= flagNorth;
+    if (cube_faces[West].add_new_drawn_primitive(render_id, polygon.color, temp_positions, temp_indices)) flags |= flagWest;
+    if (cube_faces[Meridian].add_new_drawn_primitive(render_id, polygon.color, temp_positions, temp_indices)) flags |= flagMeridian;
+    if (cube_faces[East].add_new_drawn_primitive(render_id, polygon.color, temp_positions, temp_indices)) flags |= flagEast;
+    if (cube_faces[AntiMeridian].add_new_drawn_primitive(render_id, polygon.color, temp_positions, temp_indices)) flags |= flagAntiMeridian;
+    if (cube_faces[South].add_new_drawn_primitive(render_id, polygon.color, temp_positions, temp_indices)) flags |= flagSouth;
+
+    primitive_map.try_emplace(render_id, renderLine, render_id, layer, flags);
+    recursive_layer_insert(render_id, layer, position);
+    drawing_updated = true;
+    return render_id;
+}
