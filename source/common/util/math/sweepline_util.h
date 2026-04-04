@@ -14,7 +14,7 @@
 
 std::optional<glm::vec3> get_sphere_line_intersection(const glm::vec3& A, const glm::vec3& B, const glm::vec3& P, const glm::vec3& Q);
 
-glm::vec3 stereographic_project(glm::vec3 sphere_pt) {
+inline glm::vec3 stereographic_project(glm::vec3 sphere_pt) {
     auto denom = (sphere_pt.z < 0.999995) ? (1.0f / (1.0f - sphere_pt.z)) : std::numeric_limits<float>::max();
     return {sphere_pt.x * denom, sphere_pt.y * denom, 0.0f};
 }
@@ -45,57 +45,7 @@ struct FaceCrossingData {
     FaceCrossing crossings[4];
 };
 
-void get_face_transitions(std::optional<glm::vec3>* transitions, const glm::vec3& A, const glm::vec3& B) {
-    float c = std::sqrt(1.0f / 3.0f);
-    std::map<FaceTransition, std::pair<glm::vec3, glm::vec3>> face_arcs {
-        {N_to_W, {{-c, c, c}, {c, c, c}}}, // +/-x, +y, +z
-        {W_to_N, {{-c, c, c}, {c, c, c}}},
-        {N_to_M, {{c, c, -c}, {c, c, c}}},  // +x, +y, +/-z
-        {M_to_N, {{c, c, -c}, {c, c, c}}},
-        {N_to_E, {{-c, c, -c}, {c, c, -c}}},  // +/-x, +y, -z
-        {E_to_N, {{-c, c, -c}, {c, c, -c}}},
-        {N_to_A, {{-c, c, -c}, {-c, c, c}}},  // -x, +y, +/-z
-        {A_to_N, {{-c, c, -c}, {-c, c, c}}},
-        {W_to_M, {{c, -c, c}, {c, c, c}}}, // +x, +/-y, +z
-        {M_to_W, {{c, -c, c}, {c, c, c}}},
-        {W_to_A, {{-c, -c, c}, {-c, c, c}}}, // -x, +/-y, +z
-        {A_to_W, {{-c, -c, c}, {-c, c, c}}},
-        {W_to_S, {{-c, -c, c}, {c, -c, c}}}, // +/-x, -y, +z
-        {S_to_W, {{-c, -c, c}, {c, -c, c}}},
-        {M_to_E, {{c, -c, -c}, {c, c, -c}}}, // +x, +/-y, -z
-        {E_to_M, {{c, -c, -c}, {c, c, -c}}},
-        {M_to_S, {{c, -c, -c}, {c, -c, c}}}, // +x, -y, +/-z
-        {S_to_M, {{c, -c, -c}, {c, -c, c}}},
-        {E_to_A, {{-c, -c, -c}, {-c, c, -c}}}, // -x, +/-y, -z
-        {A_to_E, {{-c, -c, -c}, {-c, c, -c}}},
-        {E_to_S, {{-c, -c, -c}, {c, -c, -c}}}, // +/-x, -y, -z
-        {S_to_E, {{-c, -c, -c}, {c, -c, -c}}},
-        {A_to_S, {{-c, -c, -c}, {-c, -c, c}}}, // -x, -y, +/-z
-        {S_to_A, {{-c, -c, -c}, {-c, -c, c}}},
-    };
-
-    std::optional<glm::vec3> intersections[12] {
-        get_sphere_line_intersection(A, B, face_arcs[N_to_W].first, face_arcs[N_to_W].second),
-        get_sphere_line_intersection(A, B, face_arcs[N_to_M].first, face_arcs[N_to_M].second),
-        get_sphere_line_intersection(A, B, face_arcs[N_to_E].first, face_arcs[N_to_E].second),
-        get_sphere_line_intersection(A, B, face_arcs[N_to_A].first, face_arcs[N_to_A].second),
-        get_sphere_line_intersection(A, B, face_arcs[W_to_M].first, face_arcs[W_to_M].second),
-        get_sphere_line_intersection(A, B, face_arcs[M_to_E].first, face_arcs[M_to_E].second),
-        get_sphere_line_intersection(A, B, face_arcs[E_to_A].first, face_arcs[E_to_A].second),
-        get_sphere_line_intersection(A, B, face_arcs[A_to_W].first, face_arcs[A_to_W].second),
-        get_sphere_line_intersection(A, B, face_arcs[S_to_W].first, face_arcs[S_to_W].second),
-        get_sphere_line_intersection(A, B, face_arcs[S_to_M].first, face_arcs[S_to_M].second),
-        get_sphere_line_intersection(A, B, face_arcs[S_to_E].first, face_arcs[S_to_E].second),
-        get_sphere_line_intersection(A, B, face_arcs[S_to_A].first, face_arcs[S_to_A].second),
-    };
-
-    std::sort(intersections, intersections+11,
-              [&A](const std::optional<glm::vec3>& lhs, const std::optional<glm::vec3>& rhs){
-        if (!lhs.has_value()) return false;
-        if (!rhs.has_value()) return true;
-        return glm::dot(A, lhs.value()) > glm::dot(A, rhs.value());
-    });
-}
+FaceCrossingData compute_face_crossings(const glm::vec3& A, const glm::vec3& B);
 
 struct SweepSegment {
     unsigned int prev_v_idx;

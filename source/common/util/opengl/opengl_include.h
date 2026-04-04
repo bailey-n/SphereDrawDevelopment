@@ -13,4 +13,6 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+constexpr float CHECK_TRESHHOLD = 1e-6f;
+
 #endif //SPHEREDRAW_OPENGL_INCLUDE_H

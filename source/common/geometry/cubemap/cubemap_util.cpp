@@ -49,13 +49,13 @@ transitionAngles find_border_angles(const glm::vec3& position, CubeFaceNum face)
      */
 
     constexpr float k = std::sqrt(1.0f / 2.0f); // For normalizing the normals
-    glm::vec3 plane_normals[12] = {
+    static const glm::vec3 plane_normals[12] = {
         {0.0, -k, -k}, {0.0, -k, k}, {0.0, k, -k}, {0.0, k, k},
         {-k, 0.0,-k}, {-k, 0.0, k}, {k, 0.0, -k}, {k, 0.0, k},
         {-k,-k, 0.0}, {-k, k, 0.0}, {k, -k, 0.0}, {k, k, 0.0},
     };
     constexpr float c = std::sqrt(1.0f / 3.0f);
-    glm::vec3 corners[8] = {
+    static const glm::vec3 corners[8] = {
     {-c, -c, -c},
     {-c, -c, c},
     {-c, c, -c},

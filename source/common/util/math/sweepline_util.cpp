@@ -101,26 +101,56 @@ FaceCrossing compute_next_intersection(CubeFaceNum& curr_face, const glm::vec3& 
         case Meridian:
             transition_ty = M_to_N;
             if (assn_intersect(intersection, A, B, transition_ty)) { curr_face = North; break; }
-            transition_ty = W_to_M;
-            if (assn_intersect(intersection, A, B, transition_ty)) { curr_face = Meridian; break; }
-            transition_ty = W_to_A;
-            if (assn_intersect(intersection, A, B, transition_ty)) { curr_face = AntiMeridian; break; }
-            transition_ty = W_to_S;
+            transition_ty = M_to_W;
+            if (assn_intersect(intersection, A, B, transition_ty)) { curr_face = West; break; }
+            transition_ty = M_to_E;
+            if (assn_intersect(intersection, A, B, transition_ty)) { curr_face = East; break; }
+            transition_ty = M_to_S;
             if (assn_intersect(intersection, A, B, transition_ty)) { curr_face = South; break; }
+            break;
+        case East:
+            transition_ty = E_to_N;
+            if (assn_intersect(intersection, A, B, transition_ty)) { curr_face = North; break; }
+            transition_ty = E_to_M;
+            if (assn_intersect(intersection, A, B, transition_ty)) { curr_face = Meridian; break; }
+            transition_ty = E_to_A;
+            if (assn_intersect(intersection, A, B, transition_ty)) { curr_face = AntiMeridian; break; }
+            transition_ty = E_to_S;
+            if (assn_intersect(intersection, A, B, transition_ty)) { curr_face = South; break; }
+            break;
+        case AntiMeridian:
+            transition_ty = A_to_N;
+            if (assn_intersect(intersection, A, B, transition_ty)) { curr_face = North; break; }
+            transition_ty = A_to_W;
+            if (assn_intersect(intersection, A, B, transition_ty)) { curr_face = West; break; }
+            transition_ty = A_to_E;
+            if (assn_intersect(intersection, A, B, transition_ty)) { curr_face = East; break; }
+            transition_ty = A_to_S;
+            if (assn_intersect(intersection, A, B, transition_ty)) { curr_face = South; break; }
+            break;
+        case South:
+            transition_ty = S_to_W;
+            if (assn_intersect(intersection, A, B, transition_ty)) { curr_face = West; break; }
+            transition_ty = S_to_M;
+            if (assn_intersect(intersection, A, B, transition_ty)) { curr_face = Meridian; break; }
+            transition_ty = S_to_E;
+            if (assn_intersect(intersection, A, B, transition_ty)) { curr_face = East; break; }
+            transition_ty = S_to_A;
+            if (assn_intersect(intersection, A, B, transition_ty)) { curr_face = AntiMeridian; break; }
             break;
     }
     return {transition_ty, intersection.value()};
 }
 
-FaceCrossingData get_face_transitions(const glm::vec3& A, const glm::vec3& B) {
-
-
+FaceCrossingData compute_face_crossings(const glm::vec3& A, const glm::vec3& B) {
     auto face_A = get_face(A);
     auto face_B = get_face(B);
     if (face_A == face_B) return {};
     auto curr_face = face_A;
-    std::optional<glm::vec3> intersection;
+    FaceCrossingData data;
     while (curr_face != face_B) {
-
+        data.crossings[data.crossing_count] = compute_next_intersection(curr_face, A, B);
+        data.crossing_count += 1;
     }
+    return data;
 }

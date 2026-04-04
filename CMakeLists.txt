@@ -113,6 +113,12 @@ add_executable(SphereDraw
         source/common/util/opengl/opengl_include.h
         source/common/util/math/sweepline_util.cpp
         source/common/util/math/sweepline_util.h
+        source/common/util/math/polygon_generation/segments/lineloop_segment.cpp
+        source/common/util/math/polygon_generation/segments/lineloop_segment.h
+        source/common/util/math/polygon_generation/triangle_tree/triangle_tree.cpp
+        source/common/util/math/polygon_generation/triangle_tree/triangle_tree.h
+        source/common/util/math/linalg.h
+        source/common/util/math/linalg.cpp
         # NEW INCLUDES (Organize later)
 )
 target_link_libraries(SphereDraw

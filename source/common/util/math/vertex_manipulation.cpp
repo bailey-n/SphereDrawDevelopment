@@ -5,6 +5,7 @@
 
 #include "vertex_manipulation.h"
 #include "cubemap_texture_util.h"
+#include "cubemap_util.h"
 #include "sweepline_util.h"
 #include "common_glm_operations.h"
 #include <cstdint>
@@ -223,127 +224,52 @@ void compose_polygon(const std::vector<glm::vec3>& input_verts, std::vector<glm:
         // Note that for each loop input_verts[j] is not added. This is assumed to be added in the next loop as input_verts[i].
     }
 
-    // Find where lines cross cubeface borders
+    // Find where lines cross cubeface borders. Assign vertices to appropriate faces (including edge ones)
+    std::vector<glm::vec3> f_positions[6]; // Keeps lists of vertices relevant to each face
+    std::vector<bool> vtx_is_crossing[6]; // Keeps track of which ones are border crossings for later
+    std::map<unsigned int, FaceCrossingData> crossing_data_map[6];
     n = positions.size();
-
+    auto curr_face = get_face(positions[0]);
     for (unsigned int i = 0; i < n; i++) {
         unsigned int j = next_idx(n, i);
+
+        f_positions[curr_face].emplace_back(positions[i]);
+        vtx_is_crossing[curr_face].emplace_back(false);
+
+        FaceCrossingData crossing_data = compute_face_crossings(positions[i], positions[j]);
+        if (!crossing_data.crossing_count) continue;
+        for (int k = 0; k < crossing_data.crossing_count; k++) {
+            auto crossing_type = crossing_data.crossings[k].type;
+            unsigned int crossing_from = ((unsigned int)crossing_type & 56) >> 3;
+            f_positions[crossing_from].emplace_back(crossing_data.crossings[k].location);
+            vtx_is_crossing[crossing_from].emplace_back(true);
+            crossing_data_map[crossing_from].emplace(f_positions[crossing_from].size()-1, crossing_data);
+
+            unsigned int crossing_to = ((unsigned int)crossing_type & 7);
+            f_positions[crossing_to].emplace_back(crossing_data.crossings[k].location);
+            vtx_is_crossing[crossing_to].emplace_back(true);
+            crossing_data_map[crossing_to].emplace(f_positions[crossing_to].size()-1, crossing_data);
+        }
+        curr_face = get_face(positions[j]);
     }
 
-//    indices.clear();
-//    indices.reserve(input_verts.size());
-//    positions = input_verts;
-//
-//    // Create vector of indices
-//    std::vector<unsigned int> v_indices;
-//    v_indices.reserve(input_verts.size());
-//    for (unsigned int i = 0; i < input_verts.size(); i++) {
-//        v_indices.emplace_back(i);
-//    }
-//
-//    // Sort indices (rather than points themselves; their order is important for segments)
-//    std::sort(v_indices.begin(), v_indices.end(),[&positions](unsigned int i, unsigned int j){
-//        return (positions[i].x < positions[j].x) || (positions[i].x == positions[j].x && positions[i].y < positions[j].y);
-//    });
-//
-//    // Create event queue and fill with vertex events.
-//    auto n = positions.size();
-//    std::priority_queue<SweepLineEvent> event_queue;
-//    for (auto& v_idx: v_indices) {
-//        auto prev = prev_idx(n, v_idx);
-//        bool prev_before = (positions[prev].x < positions[v_idx].x) || (positions[prev].x == positions[v_idx].x && positions[prev].y < positions[v_idx].y);
-//
-//        auto next = next_idx(n, v_idx);
-//        bool next_before = (positions[next].x < positions[v_idx].x) || (positions[next].x == positions[v_idx].x && positions[next].y < positions[v_idx].y);
-//
-//        if (!prev_before && !next_before) {
-//            event_queue.emplace(SweepLineEvent::Type::Vertex_Split, positions[v_idx], SweepLineEventData(v_idx, false));
-//        }
-//        else if (prev_before && next_before) {
-//            event_queue.emplace(SweepLineEvent::Type::Vertex_Merge, positions[v_idx], v_idx);
-//        }
-//        else {
-//            event_queue.emplace(SweepLineEvent::Type::Vertex_Segment, positions[v_idx], v_idx);
-//        }
-//    }
-//
-//    // Create sweep line data structure
-//    std::set<SweepSegment> sweep_segments;
-//
-//    // Process events
-//    while(!event_queue.empty()) {
-//        auto event = event_queue.top();
-//        event_queue.pop();
-//
-//        if (event.type == SweepLineEvent::Type::Vertex_Split) {
-//            SweepSegment::sweep_x = event.position.x + 0.000001f; // Is a tiny bit forward to allow for proper evaluation during insertion
-//            auto insert_1 = sweep_segments.emplace(positions, event.data.idx, true);
-//            auto insert_2 = sweep_segments.emplace(positions, event.data.idx, false);
-//            if (!insert_1.second || !insert_2.second) throw std::exception(); // This shouldn't fail
-//
-//            auto lower_segment = *insert_1.first < *insert_2.first ? insert_1.first : insert_2.first;
-//            auto upper_segment = *insert_1.first < *insert_2.first ? insert_2.first : insert_1.first;
-//
-//            if (lower_segment != sweep_segments.begin()) {
-//                auto cmp_down = lower_segment;
-//                cmp_down--;
-//                float s1 = get_intersect_t(positions, *lower_segment, *cmp_down);
-//                float t1 = get_intersect_t(positions, *cmp_down, *lower_segment);
-//                if ((0.0 <= s1 && s1 <= 1.0) && (0.0 <= t1 && t1 <= 1.0)) {
-//                    event_queue.emplace(SweepLineEvent::Type::Intersect, lower_segment->at_t(s1));
-//                }
-//            }
-//
-//            if ((++upper_segment) != sweep_segments.end()) {
-//                auto cmp_up = upper_segment;
-//                upper_segment--;
-//                float s2 = get_intersect_t(positions, *upper_segment, *cmp_up);
-//                float t2 = get_intersect_t(positions, *cmp_up, *upper_segment);
-//                if ((0.0 <= s2 && s2 <= 1.0) && (0.0 <= t2 && t2 <= 1.0)) {
-//                    event_queue.emplace(SweepLineEvent::Type::Intersect, upper_segment->at_t(s2));
-//                }
-//            }
-//        }
-//
-//        else if (event.type == SweepLineEvent::Type::Vertex_Merge) {
-//            SweepSegment::sweep_x = event.position.x - 0.000001f; // Is a tiny bit behind to allow for proper evaluation during comparison
-//            auto lower_segment = *event.data.segment_1 < *event.data.segment_2 ? *event.data.segment_1 : *event.data.segment_2;
-//            auto upper_segment = *event.data.segment_1 < *event.data.segment_2 ? *event.data.segment_2 : *event.data.segment_1;
-//
-//            // Get the data for segments below lower segment and above upper segment
-//            auto lower_segment_itt = sweep_segments.find(lower_segment);
-//            auto upper_segment_itt = sweep_segments.find(upper_segment);
-//            // Nothing to test if there is nothing above/below these segments.
-//            if (lower_segment_itt == sweep_segments.begin() || upper_segment_itt == sweep_segments.end()) continue;
-//
-//            auto merge_lower = *--lower_segment_itt;
-//            auto merge_upper = *++upper_segment_itt;
-//
-//            // Delete segments
-//            sweep_segments.erase(lower_segment);
-//            sweep_segments.erase(upper_segment);
-//
-//            // Test if merge_lower and merge_upper intersect
-//            float s = get_intersect_t(positions, merge_lower, merge_upper);
-//            float t = get_intersect_t(positions, merge_upper, merge_lower);
-//            if ((0.0 <= s && s <= 1.0) && (0.0 <= t && t <= 1.0)) {
-//                event_queue.emplace(SweepLineEvent::Type::Intersect, lower_segment.at_t(s));
-//            }
-//        }
-//
-//        else if (event.type == SweepLineEvent::Type::Vertex_Segment) {
-//            SweepSegment::sweep_x = event.position.x;
-//
-//            // Swap target segment data with new segment data and test for intersections
-//            // with the segments above/below it
-//        }
-//
-//        else if (event.type == SweepLineEvent::Type::Intersect) {
-//            SweepSegment::sweep_x = event.position.x;
-//
-//            // Swap the intersecting segments data, add intersection to overall position list,
-//            // test for intersection of new upper segment with segment above it (if it exists)
-//            // and of new lower segment with segment below it (if it exists)
-//        }
-//    }
+    // // Convert to face UVS
+    // std::vector<glm::vec3> f_uvs[6];
+    // for (unsigned int i = 0; i < 6; i++) {
+    //     for (unsigned int j = 0; j < f_positions[i].size(); i++) {
+    //         f_uvs[i].emplace_back(to_face_uv_vec3(f_positions[i][j], (CubeFaceNum)i));
+    //     }
+    // }
+
+    // Insert points between crossings
+    std::vector<glm::vec3> g_positions[6];
+    for (int i = 0; i < 6; i++) {
+        for (int j = 0; j < f_positions[i].size(); j++) {
+            if (!vtx_is_crossing[i][j]) {
+                g_positions[i].emplace_back(f_positions[i][j]);
+                continue;
+            }
+            g_positions[i].emplace_back(f_positions[i][j]);
+        }
+    }
 }
