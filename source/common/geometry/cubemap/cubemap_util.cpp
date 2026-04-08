@@ -23,39 +23,39 @@ CubeFaceNum get_face(const glm::vec3& position) {
 
 transitionAngles find_border_angles(const glm::vec3& position, CubeFaceNum face) {
     // Notes on border vs normal for plane which makes that border:
-    /* North Face:
+    /* North Face: +y
      * [left: (0, 1, -1)] [bottom: (-1, 1, 0)] [right: (0, 1, 1)] [top: (1, 1, 0)] <-> 2 9 3 11
      * [bl: (1, 1, 1)] [br: (1, 1, -1)] [tr: (-1, 1, -1)] [tl: (-1, 1, 1)]         <-> 7 6 2 3
      */
-    /* West Face:
+    /* West Face: +z
      * [left: (1, 0, 1)] [bottom: (0, 1, 1)] [right: (1, 0, -1)] [top: (0, 1, -1)] <-> 7 3 6 2
      * [bl: (-1, -1, 1)] [br: (1, -1, 1)] [tr: (1, 1, 1)] [tl: (-1, 1, 1)]         <-> 1 5 7 3
      */
-    /* Meridian Face:
+    /* Meridian Face: +x
      * [left: (1, 0, -1)] [bottom: (1, 1, 0)] [right: (1, 0, 1)] [top: (-1, 1, 0)] <-> 6 11 7 9
      * [bl: (1, -1, 1)] [br: (1, -1, -1)] [tr: (1, 1, -1)] [tl: (1, 1, 1)]         <-> 5 4 6 7
      */
-    /* East Face:
+    /* East Face: -z
      * [left: (1, 0, 1)] [bottom: (0, 1, -1)] [right: (1, 0, -1)] [top: (0, 1, 1)] <-> 7 2 6 3
      * [bl: (1, -1, -1)] [br: (-1, -1, -1)] [tr: (-1, 1, -1)] [tl: (1, 1, -1)]     <-> 4 0 2 6
      */
-    /* AntiMeridian Face:
+    /* AntiMeridian Face: -x
      * [left: (1, 0, -1)] [bottom: (-1, 1, 0)] [right: (1, 0, 1)] [top: (1, 1, 0)] <-> 6 9 7 11
      * [bl: (-1, -1, -1)] [br: (-1, -1, 1)] [tr: (-1, 1, 1)] [tl: (-1, 1, -1)]     <-> 0 1 3 2
      */
-    /* South Face:
+    /* South Face: -y
      * [left: (0, 1, 1)] [bottom: (-1, 1, 0)] [right: (0, 1, -1)] [top: (1, 1, 0)] <-> 3 9 2 11
      * [bl: (-1, -1, 1)] [br: (-1, -1, -1)] [tr: (1, -1, -1)] [tl: (1, -1, 1)]     <-> 1 0 4 5
      */
 
     constexpr float k = std::sqrt(1.0f / 2.0f); // For normalizing the normals
-    glm::vec3 plane_normals[12] = {
+    static const glm::vec3 plane_normals[12] = {
         {0.0, -k, -k}, {0.0, -k, k}, {0.0, k, -k}, {0.0, k, k},
         {-k, 0.0,-k}, {-k, 0.0, k}, {k, 0.0, -k}, {k, 0.0, k},
         {-k,-k, 0.0}, {-k, k, 0.0}, {k, -k, 0.0}, {k, k, 0.0},
     };
     constexpr float c = std::sqrt(1.0f / 3.0f);
-    glm::vec3 corners[8] = {
+    static const glm::vec3 corners[8] = {
     {-c, -c, -c},
     {-c, -c, c},
     {-c, c, -c},

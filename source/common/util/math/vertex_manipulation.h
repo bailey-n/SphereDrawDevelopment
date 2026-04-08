@@ -27,5 +27,6 @@ inline glm::vec3 slerp(const glm::vec3& u, const glm::vec3& v, float t);
 std::vector<glm::vec3> subdivide_line(const glm::vec3&  u, const glm::vec3& v, double max_subdiv_angle);
 void make_sphere_circle(glm::vec3 center, float radius, std::vector<glm::vec3>& positions, std::vector<glm::u32vec3>& indices);
 void make_sphere_line(const std::vector<glm::vec3>& input_verts, float width, std::vector<glm::vec3>& positions, std::vector<glm::u32vec3>& indices);
+void compose_polygon(const std::vector<glm::vec3>& input_verts, std::vector<glm::vec3>& positions, std::vector<glm::u32vec3>& indices);
 
 #endif //VERTEX_MANIPULATION_H

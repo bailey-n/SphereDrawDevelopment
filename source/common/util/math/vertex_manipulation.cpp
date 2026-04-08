@@ -5,13 +5,16 @@
 
 #include "vertex_manipulation.h"
 #include "cubemap_texture_util.h"
+#include "cubemap_util.h"
+#include "sweepline_util.h"
+#include "common_glm_operations.h"
 #include <cstdint>
 #include <cmath>
 #include <queue>
 #include <utility>
 #include <vector>
-#include <glm/gtc/type_ptr.hpp>
-#include <GL/glew.h>
+#include <algorithm>
+
 
 glm::vec3 slerp(const glm::vec3& u, const glm::vec3& v, float t) {
     const float angle = std::acos(glm::dot(u, v));
@@ -190,6 +193,83 @@ void make_sphere_line(const std::vector<glm::vec3>& input_verts, float width, st
             // Move quad forward
             top_left = quad.top_right;
             bottom_left = quad.bottom_right;
+        }
+    }
+}
+
+void compose_polygon(const std::vector<glm::vec3>& input_verts, std::vector<glm::vec3>& positions, std::vector<glm::u32vec3>& indices) {
+    if (input_verts.size() < 3) return;
+    positions.clear();
+    auto n = input_verts.size();
+
+    // Subdivide arcs to ensure smaller than max length
+    for (unsigned int i = 0; i < n; i++) {
+        unsigned int j = next_idx(n, i);
+        auto arc_dist = arc_length(input_verts[i], input_verts[j]);
+        auto subdivs = (arc_dist / MAX_ARC_LENGTH_RADIANS);
+        positions.emplace_back(input_verts[i]);
+        if (subdivs > 1.0f) {
+            // Subdivide via partial rotation
+            float subdiv_ct = std::ceil(subdivs);
+            auto subdiv_ct_int = (unsigned int)subdiv_ct;
+            float rotate_distance = arc_dist / subdiv_ct;
+            glm::vec3 axis = glm::normalize(glm::cross(input_verts[i], input_verts[j]));
+            glm::mat4x4 base_rot = glm::rotate(glm::mat4x4(1.0f), rotate_distance, axis);
+            glm::mat4x4 curr_rot = base_rot;
+            // for (int k = 1; k < subdiv_ct_int; k++) {
+            //     positions.emplace_back(apply_rotation(curr_rot, input_verts[i]));
+            //     curr_rot = base_rot * curr_rot;
+            // }
+        }
+        // Note that for each loop input_verts[j] is not added. This is assumed to be added in the next loop as input_verts[i].
+    }
+
+    // Find where lines cross cubeface borders. Assign vertices to appropriate faces (including edge ones)
+    std::vector<glm::vec3> f_positions[6]; // Keeps lists of vertices relevant to each face
+    std::vector<bool> vtx_is_crossing[6]; // Keeps track of which ones are border crossings for later
+    std::map<unsigned int, FaceCrossingData> crossing_data_map[6];
+    n = positions.size();
+    auto curr_face = get_face(positions[0]);
+    for (unsigned int i = 0; i < n; i++) {
+        unsigned int j = next_idx(n, i);
+
+        f_positions[curr_face].emplace_back(positions[i]);
+        vtx_is_crossing[curr_face].emplace_back(false);
+
+        FaceCrossingData crossing_data = compute_face_crossings(positions[i], positions[j]);
+        if (!crossing_data.crossing_count) continue;
+        for (int k = 0; k < crossing_data.crossing_count; k++) {
+            auto crossing_type = crossing_data.crossings[k].type;
+            unsigned int crossing_from = ((unsigned int)crossing_type & 56) >> 3;
+            f_positions[crossing_from].emplace_back(crossing_data.crossings[k].location);
+            vtx_is_crossing[crossing_from].emplace_back(true);
+            crossing_data_map[crossing_from].emplace(f_positions[crossing_from].size()-1, crossing_data);
+
+            unsigned int crossing_to = ((unsigned int)crossing_type & 7);
+            f_positions[crossing_to].emplace_back(crossing_data.crossings[k].location);
+            vtx_is_crossing[crossing_to].emplace_back(true);
+            crossing_data_map[crossing_to].emplace(f_positions[crossing_to].size()-1, crossing_data);
+        }
+        curr_face = get_face(positions[j]);
+    }
+
+    // // Convert to face UVS
+    // std::vector<glm::vec3> f_uvs[6];
+    // for (unsigned int i = 0; i < 6; i++) {
+    //     for (unsigned int j = 0; j < f_positions[i].size(); i++) {
+    //         f_uvs[i].emplace_back(to_face_uv_vec3(f_positions[i][j], (CubeFaceNum)i));
+    //     }
+    // }
+
+    // Insert points between crossings
+    std::vector<glm::vec3> g_positions[6];
+    for (int i = 0; i < 6; i++) {
+        for (int j = 0; j < f_positions[i].size(); j++) {
+            if (!vtx_is_crossing[i][j]) {
+                g_positions[i].emplace_back(f_positions[i][j]);
+                continue;
+            }
+            g_positions[i].emplace_back(f_positions[i][j]);
         }
     }
 }

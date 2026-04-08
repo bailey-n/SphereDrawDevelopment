@@ -23,6 +23,7 @@ class Cubemap {
     std::deque<CubeMapId> deactivated_ids;
     CubeMapId lowest_unused_id = 0;
     uint32_t feature_count = 0;
+    CubeMapId selected_id = UINT32_MAX;
     bool drawing_updated = false;
 
     bool is_active_id(CubeMapId id);
@@ -34,6 +35,8 @@ class Cubemap {
     std::map<CubeMapId, LayerPrimitiveInfo> layer_map;
     std::map<CubeMapId, DrawnPrimitiveInfo> primitive_map;
     CubeFace cube_faces[6];
+
+    std::map<CubeMapId, uint32_t> id_map;
 
     [[nodiscard]] uint32_t layer_size(const LayerPrimitiveInfo& info) const;
     void remove_element_from_parent_layer(CubeMapId cmap_id);
@@ -139,6 +142,11 @@ public:
     // Adds new, empty layer, with no layer primitive data. If you want it to be added to the end of a parent layer, specify the parent layer id.
     // If you want it to be in a specific position in the parent layer, specify the layer id and position (will clamp to back if position >= parent layer size).
     CubeMapId new_empty_layer(CubeMapId parent_layer=InvalidId, uint32_t position=-1);
+
+    [[nodiscard]] std::vector<std::pair<uint32_t, CubeMapId>> get_drawn_elements_at(glm::vec3 pos) const;
+
+    bool select(CubeMapId id);
+    bool deselect();
 };
 
 

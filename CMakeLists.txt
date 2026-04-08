@@ -22,19 +22,6 @@ set(ALL_LIBS
         GLEW_1130
 )
 
-# ---- Native File Dialog (Windows) ----
-add_library(nfd STATIC
-        external/nfd/nfd_win.cpp
-)
-
-target_include_directories(nfd PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/external/nfd/include
-)
-
-# Windows system libs NFD needs
-target_link_libraries(nfd PUBLIC comdlg32 ole32 uuid)
-
-
 add_definitions(
         -DTW_STATIC
         -DTW_NO_LIB_PRAGMA
@@ -124,7 +111,14 @@ add_executable(SphereDraw
         source/common/geometry/meshes/reference_texture_mesh.cpp
         source/common/geometry/meshes/reference_texture_mesh.h
         source/common/util/opengl/opengl_include.h
-
+        source/common/util/math/sweepline_util.cpp
+        source/common/util/math/sweepline_util.h
+        source/common/util/math/polygon_generation/segments/lineloop_segment.cpp
+        source/common/util/math/polygon_generation/segments/lineloop_segment.h
+        source/common/util/math/polygon_generation/triangle_tree/triangle_tree.cpp
+        source/common/util/math/polygon_generation/triangle_tree/triangle_tree.h
+        source/common/util/math/linalg.h
+        source/common/util/math/linalg.cpp
         # NEW INCLUDES (Organize later)
 )
 target_link_libraries(SphereDraw
@@ -150,5 +144,17 @@ target_include_directories(SphereDraw PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/util/opengl/shader
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/util/timer
 )
+
+# ---- Native File Dialog (Windows) ----
+add_library(nfd STATIC
+        external/nfd/nfd_win.cpp
+)
+
+target_include_directories(nfd PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/nfd/include
+)
+
+# Windows system libs NFD needs
+target_link_libraries(nfd PUBLIC comdlg32 ole32 uuid)
 
 add_subdirectory(test)

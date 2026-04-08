@@ -41,15 +41,27 @@ void CubeFace::queue_draw(CubeMapId id) {
     draw_order.emplace(id);
 }
 
-void CubeFace::draw(const Camera& camera, bool update) {
+void CubeFace::draw(const Camera& camera, bool update, CubeMapId selected_mesh) {
     std::vector<DrawnMesh*> to_draw;
     to_draw.reserve(draw_order.size());
+    std::optional<DrawnMesh*> highlight_mesh;
     while (!draw_order.empty()) {
-        to_draw.emplace_back(&drawn_meshes.at(draw_order.front()));
+        auto next_id = draw_order.front();
+        if (next_id != selected_mesh) to_draw.emplace_back(&drawn_meshes.at(next_id));
+        else highlight_mesh.emplace(&drawn_meshes.at(next_id));
         draw_order.pop();
     }
     if (update) {
-        mesh->update_texture(reference_mesh, to_draw);
+        mesh->update_texture(reference_mesh, to_draw, highlight_mesh);
     }
     mesh->draw(camera);
 }
+
+std::vector<CubeMapId> CubeFace::get_drawn_elements_at(glm::vec3 pos) const {
+    std::vector<CubeMapId> results;
+    for (const auto& [_id, _drawn_mesh]: drawn_meshes) {
+        if (_drawn_mesh.contains_point(pos)) results.emplace_back(_id);
+    }
+    return results;
+}
+
