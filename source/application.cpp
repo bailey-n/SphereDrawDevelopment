@@ -660,6 +660,8 @@ void Application::handle_event(const AppAction &action) {
                 case State::DrawMode::Polyline:
                 {
                     if (!polyline_tool.armed_for_placement) {
+                        glm::vec3 pos = lat_lon_to_xyz(click_coords.first, click_coords.second, 1.0f);
+                        project.selectPrimitiveAt(pos);
                         break;
                     }
 
