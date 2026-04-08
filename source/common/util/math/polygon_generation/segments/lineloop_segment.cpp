@@ -21,10 +21,10 @@ void BaseLineLoopSegment::try_intersect(const BaseLineLoopSegment& other) {
 }
 
 void BaseLineLoopSegment::sort_intersections() {
-    auto temp_positions = positions;
-    std::sort(intersections.begin(), intersections.end(),
-        [temp_positions](const LLSegmentIntersection& lhs, const LLSegmentIntersection& rhs) {
-            glm::vec3 starting_pos = temp_positions->at(lhs.segment_1.prev_id);
-        glm::dot(starting_pos, lhs.pos) > glm::dot(starting_pos, rhs.pos);
-    });
+    // auto temp_positions = positions;
+    // std::sort(intersections.begin(), intersections.end(),
+    //     [temp_positions](const LLSegmentIntersection& lhs, const LLSegmentIntersection& rhs) {
+    //         glm::vec3 starting_pos = temp_positions->at(lhs.segment_1.prev_id);
+    //     glm::dot(starting_pos, lhs.pos) > glm::dot(starting_pos, rhs.pos);
+    // });
 }

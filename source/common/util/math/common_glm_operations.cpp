@@ -16,6 +16,10 @@ std::vector<glm::u8vec4> rgba_white_square_1024() {
     return {4 * 1024 * 1024, {255, 255, 255, 255}};
 }
 
+std::vector<glm::u8> r_black_square_1024() {
+    return std::vector<glm::u8>(1024 * 1024, 0);
+}
+
 void print_current_bound_VAO() {
     GLint boundVAO = 0;
     glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &boundVAO);

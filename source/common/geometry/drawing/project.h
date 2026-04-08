@@ -134,6 +134,19 @@ public:
         }
     }
 
+    void selectPrimitiveAt(glm::vec3 pos) {
+        std::vector<std::pair<uint32_t, CubeMapId>> selected_objects = cubemap_->get_drawn_elements_at(pos);
+        for (auto object: selected_objects) {
+            std::cout << object.first << std::endl;
+        }
+        if (!selected_objects.empty()) {
+            auto id = selected_objects.front();
+            cubemap_->select(id.second);
+        }
+        else {
+            cubemap_->deselect();
+        }
+    }
 
 private:
     uint32_t nextLayerID_ = 1;

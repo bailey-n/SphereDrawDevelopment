@@ -23,6 +23,7 @@ class CubeFace {
 
     std::map<CubeMapId, DrawnMesh> drawn_meshes;
     std::queue<CubeMapId> draw_order;
+
 public:
     CubeFace();
     void init(CubeFaceNum face);
@@ -31,7 +32,9 @@ public:
     bool remove_drawn_primitive(CubeMapId id);
 
     void queue_draw(CubeMapId id);
-    void draw(const Camera& camera, bool updated);
+    void draw(const Camera& camera, bool updated, CubeMapId selected_mesh = UINT32_MAX);
+
+    [[nodiscard]] std::vector<CubeMapId> get_drawn_elements_at(glm::vec3 pos) const;
 };
 
 

@@ -216,10 +216,10 @@ void compose_polygon(const std::vector<glm::vec3>& input_verts, std::vector<glm:
             glm::vec3 axis = glm::normalize(glm::cross(input_verts[i], input_verts[j]));
             glm::mat4x4 base_rot = glm::rotate(glm::mat4x4(1.0f), rotate_distance, axis);
             glm::mat4x4 curr_rot = base_rot;
-            for (int k = 1; k < subdiv_ct_int; k++) {
-                positions.emplace_back(apply_rotation(curr_rot, input_verts[i]));
-                curr_rot = base_rot * curr_rot;
-            }
+            // for (int k = 1; k < subdiv_ct_int; k++) {
+            //     positions.emplace_back(apply_rotation(curr_rot, input_verts[i]));
+            //     curr_rot = base_rot * curr_rot;
+            // }
         }
         // Note that for each loop input_verts[j] is not added. This is assumed to be added in the next loop as input_verts[i].
     }

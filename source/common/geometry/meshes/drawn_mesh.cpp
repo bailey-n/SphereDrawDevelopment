@@ -14,7 +14,8 @@ glm::mat4x4 DrawnMesh::MVP = (
 DrawnMesh::DrawnMesh(
     CubeFaceNum face, const std::vector<glm::vec3>& verts,
     const std::vector<glm::vec4>& cols, const std::vector<glm::u32vec3>& idxs
-    ) : VAO(gen_vao_and_bind()), vertices(verts), colors(cols), indices({}), model(1.0f), face(face) {
+    ) : VAO(gen_vao_and_bind()), original_vertices(verts),
+    vertices(verts), colors(cols), indices({}), model(1.0f), face(face) {
 
     std::vector<glm::u32vec3>& _indices = indices.indices;
     std::vector<glm::vec3>& _vertices = vertices.buff;
@@ -76,7 +77,7 @@ DrawnMesh::~DrawnMesh() {
     glDeleteVertexArrays(1, &VAO);
 }
 
-void DrawnMesh::draw_texture() const {
+void DrawnMesh::draw_texture(bool highlighted) const {
     auto program = shaderManager::get_program({"pointVertexShader.glsl", "pointFragmentShader.glsl"});
     if (program == static_cast<GLuint>(-1)) return;
     glUseProgram(program);
@@ -84,6 +85,10 @@ void DrawnMesh::draw_texture() const {
     const GLint mvpID = glGetUniformLocation(program, "MVP");
     if (mvpID != -1) {
         glUniformMatrix4fv(mvpID, 1, GL_FALSE, glm::value_ptr(MVP));
+    }
+    const GLint highlightedID = glGetUniformLocation(program, "highlighted");
+    if (highlightedID != -1) {
+        glUniform1i(highlightedID, highlighted);
     }
 
     glBindVertexArray(VAO);
@@ -108,4 +113,13 @@ bool DrawnMesh::renderable() const {
     return indices.size() > 0;
 }
 
-
+bool DrawnMesh::contains_point(glm::vec3 point) const {
+    for (const auto& triangle: indices.indices) {
+        glm::mat3x3 triangle_matrix = glm::mat3x3(original_vertices[triangle.x], original_vertices[triangle.y], original_vertices[triangle.z]);
+        if (glm::abs(glm::determinant(triangle_matrix)) < 1e-6) continue;
+        triangle_matrix = glm::inverse(triangle_matrix);
+        auto check_point = triangle_matrix * point;
+        if ((check_point.x > 1e-6) && (check_point.y > 1e-6) && (check_point.z > 1e-6)) return true;
+    }
+    return false;
+}

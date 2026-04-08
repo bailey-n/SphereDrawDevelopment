@@ -134,7 +134,19 @@ void Cubemap::remove_id(CubeMapId id) {
 void Cubemap::draw(const Camera &camera) {
     if (drawing_updated) {
         for (const auto id: draw_order) {
+            if (id == selected_id) continue;
             const auto& primitive = primitive_map.at(id);
+            if (primitive.type != ObjectType::InvalidObject && primitive.type != ObjectType::renderLayer) {
+                if (primitive.face_flags & flagNorth) cube_faces[North].queue_draw(primitive.id);
+                if (primitive.face_flags & flagWest) cube_faces[West].queue_draw(primitive.id);
+                if (primitive.face_flags & flagMeridian) cube_faces[Meridian].queue_draw(primitive.id);
+                if (primitive.face_flags & flagEast) cube_faces[East].queue_draw(primitive.id);
+                if (primitive.face_flags & flagAntiMeridian) cube_faces[AntiMeridian].queue_draw(primitive.id);
+                if (primitive.face_flags & flagSouth) cube_faces[South].queue_draw(primitive.id);
+            }
+        }
+        if (selected_id != UINT32_MAX) {
+            const auto& primitive = primitive_map.at(selected_id);
             if (primitive.type != ObjectType::InvalidObject && primitive.type != ObjectType::renderLayer) {
                 if (primitive.face_flags & flagNorth) cube_faces[North].queue_draw(primitive.id);
                 if (primitive.face_flags & flagWest) cube_faces[West].queue_draw(primitive.id);
@@ -146,7 +158,7 @@ void Cubemap::draw(const Camera &camera) {
         }
     }
     for (auto& face: cube_faces) {
-        face.draw(camera, drawing_updated);
+        face.draw(camera, drawing_updated, selected_id);
     }
     if (drawing_updated) drawing_updated = false;
 }
@@ -203,6 +215,9 @@ CubeMapId Cubemap::add_new_point(const PointPrimitive &point, CubeMapId layer, u
     primitive_map.try_emplace(render_id, renderPoint, render_id, layer, flags);
     recursive_layer_insert(render_id, layer, position);
     drawing_updated = true;
+
+    id_map.emplace(render_id, point.getID());
+
     return render_id;
 }
 
@@ -224,6 +239,9 @@ bool Cubemap::remove_point(CubeMapId cmap_id) {
     primitive_map.erase(cmap_id);
     remove_id(cmap_id);
     drawing_updated = true;
+
+    id_map.erase(cmap_id);
+
     return true;
 }
 
@@ -250,6 +268,9 @@ CubeMapId Cubemap::add_new_line(const PolylinePrimitive& line, CubeMapId layer, 
     primitive_map.try_emplace(render_id, renderLine, render_id, layer, flags);
     recursive_layer_insert(render_id, layer, position);
     drawing_updated = true;
+
+    id_map.emplace(render_id, line.getID());
+
     return render_id;
 }
 
@@ -271,6 +292,9 @@ bool Cubemap::remove_line(CubeMapId cmap_id) {
     primitive_map.erase(cmap_id);
     remove_id(cmap_id);
     drawing_updated = true;
+
+    id_map.erase(cmap_id);
+
     return true;
 }
 
@@ -299,3 +323,29 @@ CubeMapId Cubemap::add_new_polygon(const PolygonPrimitive& polygon, CubeMapId la
     drawing_updated = true;
     return render_id;
 }
+
+std::vector<std::pair<uint32_t, CubeMapId>> Cubemap::get_drawn_elements_at(glm::vec3 pos) const {
+    // TODO: Check around multiple faces if it's really close to an edge
+    auto face = get_face(pos);
+    auto cmap_ids = cube_faces[face].get_drawn_elements_at(pos);
+    std::vector<std::pair<uint32_t, CubeMapId>> primitive_ids;
+    for (auto id: cmap_ids) {
+        primitive_ids.emplace_back(id_map.at(id), id);
+    }
+    return primitive_ids;
+}
+
+bool Cubemap::select(CubeMapId id) {
+    if (!is_active_id(id)) return false;
+    selected_id = id;
+    drawing_updated = true;
+    return true;
+}
+
+bool Cubemap::deselect() {
+    if (selected_id == UINT32_MAX) return false;
+    selected_id = UINT32_MAX;
+    drawing_updated = true;
+    return true;
+}
+

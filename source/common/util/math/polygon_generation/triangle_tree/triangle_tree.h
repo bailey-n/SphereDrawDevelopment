@@ -34,7 +34,7 @@ class TriangleNode {
 
 public:
     TriangleNode(unsigned int id, glm::u32vec3 vtx_idxs, glm::vec3 a, glm::vec3 b, glm::vec3 c, bool make_root = false) :
-    id(id), vertices({a, b, c}), containment_check_matrix({a, b, c}),
+    id(id), vertices(a, b, c), containment_check_matrix(a, b, c),
         degenerate(glm::abs(glm::determinant(containment_check_matrix)) < CHECK_TRESHHOLD), is_root(make_root),
         left_child_edge(vtx_idxs.x, vtx_idxs.y, UINT32_MAX),
         right_child_edge(vtx_idxs.y, vtx_idxs.z, UINT32_MAX),
@@ -125,34 +125,34 @@ public:
         segment_subdiv_queue.emplace(first_triangle_idxs.y, first_triangle_idxs.z);
         segment_subdiv_queue.emplace(first_triangle_idxs.x, first_triangle_idxs.y);
 
-        while (!segment_subdiv_queue.empty()) {
-            glm::u32vec2 curr_segment = segment_subdiv_queue.front();
-            segment_subdiv_queue.pop();
-            if ((curr_segment.y - curr_segment.x) < 2) continue;
-            unsigned int new_idx = curr_segment.x + ((curr_segment.y - curr_segment.x) / 2);
-            triangle_queue.emplace(curr_segment.x, new_idx, (curr_segment.y)%n); // TODO: force to be ccw
-            segment_subdiv_queue.emplace(new_idx, curr_segment.y);
-            segment_subdiv_queue.emplace(curr_segment.x, new_idx);
-        }
-
-        // Convert into a set of triangles
-        // Add first triangle
-        nodes.emplace_back(nodes.size(), first_triangle_idxs,
-            polyline_vertices[first_triangle_idxs.x],
-            polyline_vertices[first_triangle_idxs.y],
-            polyline_vertices[first_triangle_idxs.z]
-            );
-        triangle_queue.pop();
-        if (triangle_queue.size() >= 1)
-
-        while (!triangle_queue.empty()) {
-            glm::u32vec3 triangle = triangle_queue.front();
-            nodes.emplace_back(nodes.size(), triangle,
-                polyline_vertices[triangle.x],
-                polyline_vertices[triangle.y],
-                polyline_vertices[triangle.z]
-                );
-        }
+        // while (!segment_subdiv_queue.empty()) {
+        //     glm::u32vec2 curr_segment = segment_subdiv_queue.front();
+        //     segment_subdiv_queue.pop();
+        //     if ((curr_segment.y - curr_segment.x) < 2) continue;
+        //     unsigned int new_idx = curr_segment.x + ((curr_segment.y - curr_segment.x) / 2);
+        //     triangle_queue.emplace(curr_segment.x, new_idx, (curr_segment.y)%n); // TODO: force to be ccw
+        //     segment_subdiv_queue.emplace(new_idx, curr_segment.y);
+        //     segment_subdiv_queue.emplace(curr_segment.x, new_idx);
+        // }
+        //
+        // // Convert into a set of triangles
+        // // Add first triangle
+        // nodes.emplace_back(nodes.size(), first_triangle_idxs,
+        //     polyline_vertices[first_triangle_idxs.x],
+        //     polyline_vertices[first_triangle_idxs.y],
+        //     polyline_vertices[first_triangle_idxs.z]
+        //     );
+        // triangle_queue.pop();
+        // if (triangle_queue.size() >= 1)
+        //
+        // while (!triangle_queue.empty()) {
+        //     glm::u32vec3 triangle = triangle_queue.front();
+        //     nodes.emplace_back(nodes.size(), triangle,
+        //         polyline_vertices[triangle.x],
+        //         polyline_vertices[triangle.y],
+        //         polyline_vertices[triangle.z]
+        //         );
+        // }
     }
 };
 

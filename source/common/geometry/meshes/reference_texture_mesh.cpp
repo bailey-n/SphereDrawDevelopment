@@ -60,8 +60,9 @@ void ReferenceTextureMesh::draw_texture() const {
         glBindVertexArray(0);
         return;
     }
-    glUniform1f(texture_sampler_id, 0);
+    glUniform1i(texture_sampler_id, 0);
 
     glDrawElements(GL_TRIANGLES, indices.count(),GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }

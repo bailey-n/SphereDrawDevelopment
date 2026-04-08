@@ -15,6 +15,7 @@
 
 struct DrawnMesh {
     GLuint VAO;
+    std::vector<glm::vec3> original_vertices;
     vertexAttribute<0, glm::vec3> vertices;
     vertexAttribute<1, glm::vec4> colors;
     elementBuffer indices;
@@ -28,8 +29,9 @@ struct DrawnMesh {
     DrawnMesh(CubeFaceNum face, const std::vector<glm::vec3>& sphere_vertices, const std::vector<glm::vec4>& vertex_colors, const std::vector<glm::u32vec3>& indices);
     ~DrawnMesh();
     void update_all();
-    void draw_texture() const;
-    bool renderable() const;
+    void draw_texture(bool highlighted=false) const;
+    [[nodiscard]] bool renderable() const;
+    [[nodiscard]] bool contains_point(glm::vec3 point) const;
 };
 
 

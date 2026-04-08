@@ -95,7 +95,7 @@ inline float det(const glm::vec3& l, const glm::vec3& r) {
 
 // Determine 'time' parameter for when segment 1 intersects segment 2.
 // t=0 would be at segment_1.prev, t=1 would be at segment_1.next. Outside that range is no intersection.
-float get_intersect_t(const std::vector<glm::vec3>& positions, const SweepSegment& segment_1, const SweepSegment& segment_2) {
+inline float get_intersect_t(const std::vector<glm::vec3>& positions, const SweepSegment& segment_1, const SweepSegment& segment_2) {
     const glm::vec3& v_11 = positions[segment_2.prev_v_idx];
     const glm::vec3& v_12 = positions[segment_2.next_v_idx];
     const glm::vec3& v_21 = positions[segment_1.prev_v_idx];

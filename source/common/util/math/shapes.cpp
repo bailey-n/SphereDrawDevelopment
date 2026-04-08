@@ -176,7 +176,7 @@ glm::vec3 sphere_click_xyz(const glm::vec3& position, const glm::vec3& up, float
 
     float t = -0.5f * (proj + std::sqrt(discriminant));
     glm::vec3 unit_sphere_intersect = unit_sphere_pos + t*click_direction;
-    return unit_sphere_intersect;
+    return {unit_sphere_intersect.x, unit_sphere_intersect.y, -unit_sphere_intersect.z};
 }
 
 std::pair<float, float> sphere_click_lat_lon(const glm::vec3& position, const glm::vec3& up, const float sphere_radius,

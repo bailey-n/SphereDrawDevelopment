@@ -25,8 +25,11 @@ class CubeFaceMesh {
     vertexAttribute<1, glm::vec2> uvs;
     elementBuffer indices;
     textureBuffer texture;
+    maskBuffer mask;
     glm::mat4x4 model;
     GLuint program;
+
+    bool has_selected_texture = false;
 
     // BasicMesh _test_mesh;
     CubeFaceNum face;
@@ -34,7 +37,11 @@ class CubeFaceMesh {
 public:
     explicit CubeFaceMesh(CubeFaceNum face);
     ~CubeFaceMesh();
-    void update_texture(const std::optional<ReferenceTextureMesh>& reference_texture, const std::vector<DrawnMesh*>& texture_meshes) const;
+    void update_texture(
+        const std::optional<ReferenceTextureMesh>& reference_texture,
+        const std::vector<DrawnMesh*>& texture_meshes,
+        const std::optional<DrawnMesh*>& selected_mesh
+    );
     void draw(const Camera& camera);
 };
 
