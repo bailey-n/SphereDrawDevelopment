@@ -151,6 +151,7 @@ public:
     bool deselect();
 
     void export_cubemap(const std::string& filepath);
+    void import_base_cubemap(const std::string& filepath);
 };
 
 

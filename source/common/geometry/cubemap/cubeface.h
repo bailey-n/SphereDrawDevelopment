@@ -37,6 +37,7 @@ public:
     [[nodiscard]] std::vector<CubeMapId> get_drawn_elements_at(glm::vec3 pos) const;
 
     void fill_image_export_buffer(CubeMapImageSquare square);
+    void set_base_cubemap(const std::string& filepath);
 };
 
 

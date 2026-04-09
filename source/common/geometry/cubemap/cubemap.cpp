@@ -369,3 +369,13 @@ void Cubemap::export_cubemap(const std::string &filepath) {
     stbi_write_png(filepath.c_str(), 4*CUBEFACE_SIZE, 3*CUBEFACE_SIZE,
                    4, image_mgr.get_pixels(), 4*CUBEFACE_SIZE*sizeof(glm::u8vec4));
 }
+
+void Cubemap::import_base_cubemap(const std::string &filepath) {
+    cube_faces[North].set_base_cubemap(filepath);
+    cube_faces[West].set_base_cubemap(filepath);
+    cube_faces[Meridian].set_base_cubemap(filepath);
+    cube_faces[East].set_base_cubemap(filepath);
+    cube_faces[AntiMeridian].set_base_cubemap(filepath);
+    cube_faces[South].set_base_cubemap(filepath);
+    drawing_updated = true;
+}

@@ -9,9 +9,10 @@ glm::mat4x4 ReferenceTextureMesh::MVP = (
     glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.01f, 100.0f) *
     glm::lookAt(glm::vec3{0.0f, 0.0f, -2.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f})
 );
-std::string ReferenceTextureMesh::reference_texture_path = "textures/Earth_cube_map.png";
+std::string ReferenceTextureMesh::default_reference_texture_path = "textures/Earth_cube_map.png";
 
 #include <iostream>
+#include <utility>
 #include "cubemap_texture_util.h"
 #include "mesh_util.h"
 
@@ -20,9 +21,22 @@ void ReferenceTextureMesh::load_texture() {
 }
 
 ReferenceTextureMesh::ReferenceTextureMesh(CubeFaceNum face) :
-texture_path(reference_texture_path), VAO(gen_vao_and_bind()), tex(-1),
+texture_path(default_reference_texture_path), VAO(gen_vao_and_bind()), tex(-1),
 positions({}), uvs({}), indices({}),
 program(-1) {
+    load_texture();
+    program = shaderManager::get_program({"importedCubemap.vert", "importedCubemap.frag"});
+    auto m_data = get_full_cubemap_texture_mesh_data(face);
+    positions.re_buffer_data({m_data.vertices[0], m_data.vertices[1], m_data.vertices[2], m_data.vertices[3]});
+    uvs.re_buffer_data({m_data.uvs[1], m_data.uvs[0], m_data.uvs[3], m_data.uvs[2]}); // Got them wrong in the function so we undo that mistake here
+    indices.re_buffer_data({m_data.indices[0], m_data.indices[1]});
+    glBindVertexArray(0);
+}
+
+ReferenceTextureMesh::ReferenceTextureMesh(CubeFaceNum face, std::string texture_path) :
+        texture_path(std::move(texture_path)), VAO(gen_vao_and_bind()), tex(-1),
+        positions({}), uvs({}), indices({}),
+        program(-1) {
     load_texture();
     program = shaderManager::get_program({"importedCubemap.vert", "importedCubemap.frag"});
     auto m_data = get_full_cubemap_texture_mesh_data(face);
