@@ -6,8 +6,10 @@
 #include <optional>
 #include <iostream>
 
+#ifndef STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#endif
 
 void load_cubemap_texture(const std::string& tex_path, GLuint& tex_handle, int& tex_width, int& tex_height, int& tex_channels) {
     // Load texture

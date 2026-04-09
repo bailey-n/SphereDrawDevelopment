@@ -43,6 +43,8 @@ public:
         const std::optional<DrawnMesh*>& selected_mesh
     );
     void draw(const Camera& camera);
+
+    std::vector<glm::u8vec4>& get_pixel_buffer();
 };
 
 

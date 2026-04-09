@@ -38,6 +38,8 @@ class Cubemap {
 
     std::map<CubeMapId, uint32_t> id_map;
 
+    uint32_t CUBEFACE_SIZE = 1024;
+
     [[nodiscard]] uint32_t layer_size(const LayerPrimitiveInfo& info) const;
     void remove_element_from_parent_layer(CubeMapId cmap_id);
     void recursive_layer_insert(CubeMapId cmap_id, CubeMapId layer, uint32_t position);
@@ -147,6 +149,8 @@ public:
 
     bool select(CubeMapId id);
     bool deselect();
+
+    void export_cubemap(const std::string& filepath);
 };
 
 

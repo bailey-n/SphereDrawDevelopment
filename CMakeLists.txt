@@ -119,6 +119,7 @@ add_executable(SphereDraw
         source/common/util/math/polygon_generation/triangle_tree/triangle_tree.h
         source/common/util/math/linalg.h
         source/common/util/math/linalg.cpp
+        external/stb_image_write.h
         # NEW INCLUDES (Organize later)
 )
 target_link_libraries(SphereDraw

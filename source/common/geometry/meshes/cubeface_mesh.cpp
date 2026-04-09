@@ -168,3 +168,10 @@ void CubeFaceMesh::draw(const Camera &camera) {
     glBindVertexArray(0);
 }
 
+std::vector<glm::u8vec4>& CubeFaceMesh::get_pixel_buffer() {
+    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
+    glReadPixels(0, 0, texture.width, texture.height, GL_RGBA, GL_UNSIGNED_BYTE, texture.pixels.data());
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    return texture.pixels;
+}
+

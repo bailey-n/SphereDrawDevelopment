@@ -35,6 +35,8 @@ public:
     void draw(const Camera& camera, bool updated, CubeMapId selected_mesh = UINT32_MAX);
 
     [[nodiscard]] std::vector<CubeMapId> get_drawn_elements_at(glm::vec3 pos) const;
+
+    void fill_image_export_buffer(CubeMapImageSquare square);
 };
 
 

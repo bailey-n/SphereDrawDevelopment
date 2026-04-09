@@ -688,6 +688,7 @@ void Application::handle_event(const AppAction &action) {
         }
 
         case DRAW_MODE_ROTATE:
+            // renderer.export_cubemap("textures/test_out.png"); Manually test cubemap export w/o ui
             switch (state.draw_mode) {
                 case State::DrawMode::None:
                     state.draw_mode = State::DrawMode::Point;

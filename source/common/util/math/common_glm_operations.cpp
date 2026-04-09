@@ -13,7 +13,7 @@ glm::vec3 apply_rotation(const glm::mat4x4& rot, const glm::vec3& base) {
 }
 
 std::vector<glm::u8vec4> rgba_white_square_1024() {
-    return {4 * 1024 * 1024, {255, 255, 255, 255}};
+    return {1024 * 1024, {255, 255, 255, 255}};
 }
 
 std::vector<glm::u8> r_black_square_1024() {
