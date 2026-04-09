@@ -192,4 +192,29 @@ struct quadraticSolComponents {
 // NOT IMPLEMENTED YET. RETURNS NAN FOR ALL CATEGORIES.
 circleBorderIntersects find_border_intersects(const glm::vec3& position, float r, CubeFaceNum face);
 
+struct CubeMapImageSquare {
+    glm::u8vec4 *const buff;
+    uint32_t start_x;
+    uint32_t start_y;
+    uint32_t width;
+    uint32_t image_width;
+
+    CubeMapImageSquare(char* buff, glm::u8vec2 square_pos, uint32_t width);
+
+    glm::u8vec4 &operator[](size_t i) const;
+};
+
+class CubeMapImageManager {
+    uint32_t size;
+    char* buff;
+    uint32_t face_width;
+    CubeMapImageSquare make_face(uint32_t face);
+
+public:
+    explicit CubeMapImageManager(uint32_t cubeface_width);
+    ~CubeMapImageManager();
+    CubeMapImageSquare get_face(CubeFaceNum);
+    char* get_pixels();
+};
+
 #endif //SPHEREDRAW_CUBEMAP_UTIL_H

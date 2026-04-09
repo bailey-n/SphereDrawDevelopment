@@ -65,3 +65,10 @@ std::vector<CubeMapId> CubeFace::get_drawn_elements_at(glm::vec3 pos) const {
     return results;
 }
 
+void CubeFace::fill_image_export_buffer(CubeMapImageSquare square) {
+    const auto& texture_data = mesh->get_pixel_buffer();
+    for (unsigned int i = 0; i < texture_data.size(); i++) {
+        square[i] = texture_data[i];
+    }
+}
+

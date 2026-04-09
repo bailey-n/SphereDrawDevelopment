@@ -7,6 +7,11 @@
 #include <iostream>
 #include "vertex_manipulation.h"
 
+#ifndef STB_IMAGE_WRITE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+#endif
+
 Cubemap::Cubemap() = default;
 
 void Cubemap::init() {
@@ -349,3 +354,18 @@ bool Cubemap::deselect() {
     return true;
 }
 
+void Cubemap::export_cubemap(const std::string &filepath) {
+    // East and west are flipped, and I don't know why. I think sometime earlier in the code I flipped them
+    // to get the visual rendering to work right. A '-' is flipped somewhere but the fix here is too convenient
+    // to actually tackle the underlying issue.
+    CubeMapImageManager image_mgr(CUBEFACE_SIZE);
+    cube_faces[North].fill_image_export_buffer(image_mgr.get_face(North));
+    cube_faces[West].fill_image_export_buffer(image_mgr.get_face(East));
+    cube_faces[Meridian].fill_image_export_buffer(image_mgr.get_face(Meridian));
+    cube_faces[East].fill_image_export_buffer(image_mgr.get_face(West));
+    cube_faces[AntiMeridian].fill_image_export_buffer(image_mgr.get_face(AntiMeridian));
+    cube_faces[South].fill_image_export_buffer(image_mgr.get_face(South));
+
+    stbi_write_png(filepath.c_str(), 4*CUBEFACE_SIZE, 3*CUBEFACE_SIZE,
+                   4, image_mgr.get_pixels(), 4*CUBEFACE_SIZE*sizeof(glm::u8vec4));
+}
