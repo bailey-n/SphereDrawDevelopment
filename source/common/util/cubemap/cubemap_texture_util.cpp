@@ -20,14 +20,24 @@ void load_cubemap_texture(const std::string& tex_path, GLuint& tex_handle, int& 
     }
     // Extend edges by 1 pixel to cover up lines formed from floating point imprecision
     extend_cube_map_edges(tex_data, tex_channels, tex_width, tex_height);
-    switch(tex_channels) {
-    case 3: tex_handle = gen_texture_2d_rgb(tex_width, tex_height, tex_data); break;
-    case 4: tex_handle = gen_texture_2d_rgba(tex_width, tex_height, tex_data); break;
-    default:
-        std::cout << "Unrecognized texture format" << std::endl;
-        throw std::exception();
+    if (tex_channels == 3) {
+        unsigned char* alpha_enabled_map = add_alpha_channel(tex_data, tex_width, tex_height);
+        stbi_image_free(tex_data);
+        tex_handle = gen_texture_2d_rgba(tex_width, tex_height, alpha_enabled_map);
+        delete[] alpha_enabled_map;
     }
-    stbi_image_free(tex_data);
+    else { // RGBA format
+        tex_handle = gen_texture_2d_rgba(tex_width, tex_height, tex_data);
+        stbi_image_free(tex_data);
+    }
+//    switch(tex_channels) {
+//    case 3: tex_handle = gen_texture_2d_rgb(tex_width, tex_height, tex_data); break;
+//    case 4: tex_handle = gen_texture_2d_rgba(tex_width, tex_height, tex_data); break;
+//    default:
+//        std::cout << "Unrecognized texture format" << std::endl;
+//        throw std::exception();
+//    }
+//    stbi_image_free(tex_data);
 }
 
 
@@ -206,4 +216,14 @@ CubemapTextureMeshData get_full_cubemap_texture_mesh_data(CubeFaceNum face) {
         {glm::vec2(0.0f), glm::vec2(0.0f), glm::vec2(0.0f), glm::vec2(0.0f)},
         {glm::u32vec3(0), glm::u32vec3(0)}
     };
+}
+
+unsigned char* add_alpha_channel(unsigned char* data, unsigned int width, unsigned int height) {
+    auto* new_data = new unsigned char[4*width*height];
+    auto* old_data_u8v3 = (glm::u8vec3*)data;
+    auto* new_data_u8v4 = (glm::u8vec4*)new_data;
+    for (int i = 0; i < width*height; i++) {
+        new_data_u8v4[i] = glm::vec4(old_data_u8v3[i].x, old_data_u8v3[i].y, old_data_u8v3[i].z, 255);
+    }
+    return new_data;
 }

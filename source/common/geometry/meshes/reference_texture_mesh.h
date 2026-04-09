@@ -30,13 +30,14 @@ class ReferenceTextureMesh {
 
     static glm::mat4x4 MVP;
     // static glm::mat4x4 view;
-    static std::string reference_texture_path;
+    static std::string default_reference_texture_path;
     static constexpr float TEXTURE_OPACITY = 1.0f;
 
     void load_texture();
 
 public:
-    explicit ReferenceTextureMesh(CubeFaceNum face);
+    ReferenceTextureMesh(CubeFaceNum face);
+    ReferenceTextureMesh(CubeFaceNum face, std::string texture_path);
     ~ReferenceTextureMesh();
 
     void draw_texture() const;

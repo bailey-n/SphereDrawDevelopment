@@ -72,3 +72,8 @@ void CubeFace::fill_image_export_buffer(CubeMapImageSquare square) {
     }
 }
 
+void CubeFace::set_base_cubemap(const std::string &filepath) {
+    if (reference_mesh.has_value()) reference_mesh.reset();
+    reference_mesh.emplace(face, filepath);
+}
+
