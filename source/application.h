@@ -124,9 +124,14 @@ class Application {
 
     struct OutlinerState {
         bool collapsed = false;
+        uint32_t active_layer_id = 0;
         uint32_t selected_primitive_id = 0;
         uint32_t name_buffer_primitive_id = 0;
+        uint32_t move_target_for_primitive_id = 0;
+        uint32_t move_target_layer_id = 0;
+        uint32_t layer_name_buffer_layer_id = 0;
         char name_buffer[256] = {};
+        char layer_name_buffer[256] = {};
         ImVec2 panel_size = ImVec2(0.0f, 0.0f);
     };
     OutlinerState outliner;

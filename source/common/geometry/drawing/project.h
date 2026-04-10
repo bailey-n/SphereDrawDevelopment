@@ -42,6 +42,82 @@ public:
         }
     }
 
+    void refreshNextLayerID() {
+        uint32_t max_id = 0;
+        for (const auto& layer : layers) {
+            max_id = std::max(max_id, layer.id);
+        }
+        nextLayerID_ = max_id + 1;
+    }
+
+    uint32_t getDefaultLayerID() {
+        ensureDefaultLayer();
+        return layers.front().id;
+    }
+
+    Layer* findLayerById(uint32_t id) {
+        for (auto& layer : layers) {
+            if (layer.id == id) {
+                return &layer;
+            }
+        }
+        return nullptr;
+    }
+
+    const Layer* findLayerById(uint32_t id) const {
+        for (const auto& layer : layers) {
+            if (layer.id == id) {
+                return &layer;
+            }
+        }
+        return nullptr;
+    }
+
+    uint32_t addLayer(const std::string& requested_name = "") {
+        Layer layer;
+        layer.id = nextLayerID_++;
+        layer.name = requested_name.empty()
+                     ? "Layer " + std::to_string(layers.size() + 1)
+                     : requested_name;
+        layers.push_back(layer);
+        return layer.id;
+    }
+
+    bool deleteLayer(uint32_t layer_id) {
+        ensureDefaultLayer();
+        const uint32_t default_layer_id = getDefaultLayerID();
+
+        // Never delete the default layer
+        if (layer_id == default_layer_id) {
+            return false;
+        }
+
+        auto it = std::find_if(layers.begin(), layers.end(),
+                [layer_id](const Layer& layer) { return layer.id == layer_id; });
+
+        if (it == layers.end()) {
+            return false;
+        }
+
+        Layer* default_layer = findLayerById(default_layer_id);
+        if (!default_layer) {
+            return false;
+        }
+
+        // Move primitives into Default before deleting the layer
+        for (uint32_t pid : it->primitiveIDs) {
+            default_layer->primitiveIDs.push_back(pid);
+        }
+
+        layers.erase(it);
+
+        if (cubemap_) {
+            rebuildAttachedCubemapFromProject();
+        }
+
+        return true;
+    }
+
     //ID generation helpers
     uint32_t nextPrimitiveID() {
         // Get an unused id, then immediately reserve it.
@@ -77,43 +153,56 @@ public:
 
 
     // Primitive insertion helpers
-    //Adds a primitive to the project and also appends it to the default layer's draw order
-    // Returns the primitive ID
-    uint32_t addPrimitiveToDefaultLayer(std::unique_ptr<Primitive> p){
+    uint32_t addPrimitiveToLayer(std::unique_ptr<Primitive> p, uint32_t layer_id){
         ensureDefaultLayer();
         ensurePrimitiveHasName(*p);
 
+        Layer* target_layer = findLayerById(layer_id);
+        if (!target_layer) {
+            target_layer = &layers.front();
+        }
+
         const uint32_t id = p->getID();
         primitives[id] = std::move(p);
-        layers[0].primitiveIDs.push_back(id);
+        target_layer->primitiveIDs.push_back(id);
 
-        //makes primitive additions appear immediately
-        if (cubemap_) {
-            Primitive* base = primitives[id].get();
-            if (!base) {
-                return id;
-            }
+        addPrimitiveToAttachedCubemap(primitives[id].get());
+        return id;
+    }
 
-            if (base->getType() == PrimitiveType::Point) {
-                if (auto* pt = dynamic_cast<PointPrimitive*>(base)) {
-                    cubemap_->add_new_point(*pt);
-                }
-            }
-            else if (base->getType() == PrimitiveType::Polyline) {
-                if (auto* line = dynamic_cast<PolylinePrimitive*>(base)) {
-                    cubemap_->add_new_line(*line);
-                }
-            }
-            //TODO: Once we have polygon rending finish this, only adds polygon outline for now while waiting on polygon rendering
-            else if (base->getType() == PrimitiveType::Polygon) {
-                if (auto* polygon = dynamic_cast<PolygonPrimitive*>(base)) {
-                    PolylinePrimitive outline = makeOutlineFallbackForPolygon(*polygon);
-                    cubemap_->add_new_line(outline);
-                }
+    //Adds a primitive to the project and also appends it to the default layer's draw order
+    // Returns the primitive ID
+    uint32_t addPrimitiveToDefaultLayer(std::unique_ptr<Primitive> p){
+        return addPrimitiveToLayer(std::move(p), getDefaultLayerID());
+    }
+
+    bool movePrimitiveToLayer(uint32_t primitive_id, uint32_t target_layer_id) {
+        Layer* target_layer = findLayerById(target_layer_id);
+        if (!target_layer) {
+            return false;
+        }
+
+        bool removed_from_existing_layer = false;
+        for (auto& layer : layers) {
+            auto& ids = layer.primitiveIDs;
+            auto old_end = ids.end();
+            ids.erase(std::remove(ids.begin(), ids.end(), primitive_id), ids.end());
+            if (ids.end() != old_end) {
+                removed_from_existing_layer = true;
             }
         }
 
-        return id;
+        if (primitives.find(primitive_id) == primitives.end()) {
+            return false;
+        }
+
+        target_layer->primitiveIDs.push_back(primitive_id);
+
+        if (cubemap_ && removed_from_existing_layer) {
+            rebuildAttachedCubemapFromProject();
+        }
+
+        return true;
     }
 
     //Adds a primitive but does not attach it to a layer (should be useful for loading)
@@ -186,6 +275,30 @@ public:
     }
 
 private:
+
+    void addPrimitiveToAttachedCubemap(Primitive* base) {
+        if (!cubemap_ || !base) {
+            return;
+        }
+
+        if (base->getType() == PrimitiveType::Point) {
+            if (auto* pt = dynamic_cast<PointPrimitive*>(base)) {
+                cubemap_->add_new_point(*pt);
+            }
+        }
+        else if (base->getType() == PrimitiveType::Polyline) {
+            if (auto* line = dynamic_cast<PolylinePrimitive*>(base)) {
+                cubemap_->add_new_line(*line);
+            }
+        }
+            // Polygon currently renders as a closed outline in this version.
+        else if (base->getType() == PrimitiveType::Polygon) {
+            if (auto* polygon = dynamic_cast<PolygonPrimitive*>(base)) {
+                PolylinePrimitive outline = makeOutlineFallbackForPolygon(*polygon);
+                cubemap_->add_new_line(outline);
+            }
+        }
+    }
 
     static PolylinePrimitive makeOutlineFallbackForPolygon(const PolygonPrimitive& polygon) {
         PolylinePrimitive outline(polygon.getID());

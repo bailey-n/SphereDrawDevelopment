@@ -695,7 +695,12 @@ void Application::handle_event(const AppAction &action) {
                     point->size = point_tool.size;
                     point->setName(project.makeDefaultPrimitiveName(PrimitiveType::Point));
 
-                    project.addPrimitiveToDefaultLayer(std::move(point));
+                    uint32_t target_layer_id = outliner.active_layer_id;
+                    if (project.findLayerById(target_layer_id) == nullptr) {
+                        target_layer_id = project.getDefaultLayerID();
+                    }
+
+                    project.addPrimitiveToLayer(std::move(point), target_layer_id);
 
                     outliner.selected_primitive_id = newId;
                     outliner.name_buffer_primitive_id = 0;
@@ -916,7 +921,12 @@ void Application::finishActivePolyline() {
     line->verts = polyline_tool.verts;
     line->setName(project.makeDefaultPrimitiveName(PrimitiveType::Polyline));
 
-    project.addPrimitiveToDefaultLayer(std::move(line));
+    uint32_t target_layer_id = outliner.active_layer_id;
+    if (project.findLayerById(target_layer_id) == nullptr) {
+        target_layer_id = project.getDefaultLayerID();
+    }
+
+    project.addPrimitiveToLayer(std::move(line), target_layer_id);
     project.rebuildAttachedCubemapFromProject();
 
     outliner.selected_primitive_id = newId;
@@ -937,7 +947,12 @@ void Application::finishActivePolygon() {
     polygon->verts = polygon_tool.verts;
     polygon->setName(project.makeDefaultPrimitiveName(PrimitiveType::Polygon));
 
-    project.addPrimitiveToDefaultLayer(std::move(polygon));
+    uint32_t target_layer_id = outliner.active_layer_id;
+    if (project.findLayerById(target_layer_id) == nullptr) {
+        target_layer_id = project.getDefaultLayerID();
+    }
+
+    project.addPrimitiveToLayer(std::move(polygon), target_layer_id);
     project.rebuildAttachedCubemapFromProject();
 
     outliner.selected_primitive_id = newId;
@@ -1556,16 +1571,110 @@ void Application::render_frame() {
                     outliner.name_buffer[0] = '\0';
                 }
 
+                if (project.findLayerById(outliner.active_layer_id) == nullptr) {
+                    outliner.active_layer_id = project.getDefaultLayerID();
+                }
+
+                ImGui::TextUnformatted("Layers");
+                if (ImGui::Button("Add Layer", ImVec2(-1.0f, 0.0f))) {
+                    uint32_t new_layer_id = project.addLayer();
+                    outliner.active_layer_id = new_layer_id;
+                    outliner.layer_name_buffer_layer_id = 0;
+                }
+
+                Layer* active_layer = project.findLayerById(outliner.active_layer_id);
+                const uint32_t default_layer_id = project.getDefaultLayerID();
+
+                if (active_layer) {
+                    if (outliner.layer_name_buffer_layer_id != active_layer->id) {
+                        outliner.layer_name_buffer_layer_id = active_layer->id;
+                        std::snprintf(outliner.layer_name_buffer,
+                                sizeof(outliner.layer_name_buffer),
+                                "%s",
+                                active_layer->name.c_str());
+                    }
+
+                    ImGui::Text("Active Layer: %s", active_layer->name.c_str());
+
+                    ImGui::Spacing();
+                    ImGui::TextUnformatted("Rename Active Layer");
+                    ImGui::SetNextItemWidth(-1.0f);
+                    bool rename_submitted = ImGui::InputText(
+                            "##ActiveLayerName",
+                            outliner.layer_name_buffer,
+                            sizeof(outliner.layer_name_buffer),
+                            ImGuiInputTextFlags_EnterReturnsTrue
+                    );
+
+                    bool has_nonempty_layer_name = outliner.layer_name_buffer[0] != '\0';
+
+                    if (!has_nonempty_layer_name) ImGui::BeginDisabled();
+                    if (ImGui::Button("Rename Layer", ImVec2(-1.0f, 0.0f)) || rename_submitted) {
+                        active_layer->name = outliner.layer_name_buffer;
+                    }
+                    if (!has_nonempty_layer_name) ImGui::EndDisabled();
+
+                    ImGui::Spacing();
+
+                    bool can_delete_active_layer = (active_layer->id != default_layer_id);
+                    if (!can_delete_active_layer) ImGui::BeginDisabled();
+                    if (ImGui::Button("Delete Active Layer", ImVec2(-1.0f, 0.0f))) {
+                        uint32_t deleted_layer_id = active_layer->id;
+
+                        if (project.deleteLayer(deleted_layer_id)) {
+                            outliner.active_layer_id = default_layer_id;
+                            outliner.layer_name_buffer_layer_id = 0;
+
+                            if (outliner.move_target_layer_id == deleted_layer_id) {
+                                outliner.move_target_layer_id = default_layer_id;
+                            }
+                        }
+                    }
+                    if (!can_delete_active_layer) ImGui::EndDisabled();
+
+                    if (!can_delete_active_layer) {
+                        ImGui::TextDisabled("%s", "The Default layer cannot be deleted.");
+                    } else {
+                        ImGui::TextDisabled("%s", "Deleting a layer moves its primitives into Default.");
+                    }
+                }
+                else {
+                    ImGui::TextUnformatted("Active Layer: Default");
+                }
+
+                ImGui::TextDisabled("%s", "Click a layer name to make it active for new primitives.");
+                ImGui::Separator();
+
                 const float details_min_height = 450.0f * ui_scale;
                 float list_height = ImGui::GetContentRegionAvail().y - details_min_height;
                 list_height = std::max(list_height, 170.0f * ui_scale);
 
+                bool layer_visibility_changed = false;
+
                 ImGui::BeginChild("##PrimitiveList", ImVec2(0, list_height), true);
 
-                for (const auto& layer : project.layers) {
+                for (auto& layer : project.layers) {
                     ImGui::PushID((int)layer.id);
-                    ImGui::Text("%s%s", layer.name.c_str(), layer.visible ? "" : " (hidden)");
-                    ImGui::Separator();
+
+                    bool visible = layer.visible;
+                    if (ImGui::Checkbox("##LayerVisible", &visible)) {
+                        layer.visible = visible;
+                        layer_visibility_changed = true;
+                    }
+
+                    ImGui::SameLine();
+
+                    bool is_active_layer = (layer.id == outliner.active_layer_id);
+                    std::string layer_label =
+                            std::string(is_active_layer ? "> " : "") +
+                            layer.name +
+                            (layer.visible ? "" : " (hidden)");
+
+                    if (ImGui::Selectable(layer_label.c_str(), is_active_layer)) {
+                        outliner.active_layer_id = layer.id;
+                    }
+
+                    ImGui::Indent();
 
                     bool layer_disabled = !layer.visible;
                     if (layer_disabled) ImGui::BeginDisabled(true);
@@ -1584,11 +1693,17 @@ void Application::render_frame() {
                     }
 
                     if (layer_disabled) ImGui::EndDisabled();
+
+                    ImGui::Unindent();
                     ImGui::Spacing();
                     ImGui::PopID();
                 }
 
                 ImGui::EndChild();
+
+                if (layer_visibility_changed) {
+                    project.rebuildAttachedCubemapFromProject();
+                }
 
                 ImGui::Spacing();
                 ImGui::Separator();
@@ -1605,6 +1720,23 @@ void Application::render_frame() {
                                 (base->getType() == PrimitiveType::Point)    ? "Point" :
                                 (base->getType() == PrimitiveType::Polyline) ? "Polyline" :
                                 (base->getType() == PrimitiveType::Polygon)  ? "Polygon" : "Unknown");
+
+                        uint32_t current_layer_id = 0;
+                        std::string current_layer_name = "Unknown";
+                        for (const auto& layer : project.layers) {
+                            if (std::find(layer.primitiveIDs.begin(), layer.primitiveIDs.end(),
+                                    outliner.selected_primitive_id) != layer.primitiveIDs.end()) {
+                                current_layer_id = layer.id;
+                                current_layer_name = layer.name;
+                                break;
+                            }
+                        }
+
+                        if (outliner.move_target_for_primitive_id != outliner.selected_primitive_id ||
+                            project.findLayerById(outliner.move_target_layer_id) == nullptr) {
+                            outliner.move_target_for_primitive_id = outliner.selected_primitive_id;
+                            outliner.move_target_layer_id = current_layer_id;
+                        }
 
                         bool changed = false;
 
@@ -1624,6 +1756,59 @@ void Application::render_frame() {
                             }
                             base->setName(new_name);
                         }
+
+                        ImGui::Spacing();
+                        ImGui::Separator();
+                        ImGui::Text("Current Layer: %s", current_layer_name.c_str());
+
+                        int target_layer_index = -1;
+                        std::vector<const char*> layer_names;
+                        std::vector<uint32_t> layer_ids;
+                        layer_names.reserve(project.layers.size());
+                        layer_ids.reserve(project.layers.size());
+
+                        for (const auto& layer : project.layers) {
+                            layer_names.push_back(layer.name.c_str());
+                            layer_ids.push_back(layer.id);
+                            if (layer.id == outliner.move_target_layer_id) {
+                                target_layer_index = static_cast<int>(layer_ids.size()) - 1;
+                            }
+                        }
+
+                        if (!layer_names.empty()) {
+                            if (target_layer_index < 0) {
+                                target_layer_index = 0;
+                                outliner.move_target_layer_id = layer_ids[0];
+                            }
+
+                            ImGui::TextUnformatted("Move To Layer");
+                            ImGui::SetNextItemWidth(-1.0f);
+                            if (ImGui::Combo("##MovePrimitiveToLayer", &target_layer_index,
+                                    layer_names.data(),
+                                    static_cast<int>(layer_names.size()))) {
+                                if (target_layer_index >= 0 &&
+                                    target_layer_index < static_cast<int>(layer_ids.size())) {
+                                    outliner.move_target_layer_id = layer_ids[target_layer_index];
+                                }
+                            }
+
+                            bool can_move_to_selected_layer =
+                                    outliner.move_target_layer_id != 0 &&
+                                    outliner.move_target_layer_id != current_layer_id;
+
+                            if (!can_move_to_selected_layer) ImGui::BeginDisabled();
+                            if (ImGui::Button("Move Primitive To Selected Layer", ImVec2(-1.0f, 0.0f))) {
+                                uint32_t target_layer_id = outliner.move_target_layer_id;
+                                if (project.movePrimitiveToLayer(outliner.selected_primitive_id, target_layer_id)) {
+                                    outliner.active_layer_id = target_layer_id;
+                                    outliner.move_target_layer_id = target_layer_id;
+                                    project.rebuildAttachedCubemapFromProject();
+                                }
+                            }
+                            if (!can_move_to_selected_layer) ImGui::EndDisabled();
+                        }
+
+                        ImGui::Spacing();
 
                         if (base->getType() == PrimitiveType::Point) {
                             auto* pt = dynamic_cast<PointPrimitive*>(base);
