@@ -250,6 +250,11 @@ bool Cubemap::remove_point(CubeMapId cmap_id) {
     return true;
 }
 
+bool Cubemap::remove_point_by_object_id(uint32_t id) {
+    if (!id_map.contains(id)) return false;
+    return remove_point(id_map.at(id));
+}
+
 CubeMapId Cubemap::add_new_line(const PolylinePrimitive& line, CubeMapId layer, uint32_t position) {
     if (layer != InvalidId && !primitive_map.contains(layer)) return InvalidId;
     clamp_position(layer, position);
@@ -303,6 +308,12 @@ bool Cubemap::remove_line(CubeMapId cmap_id) {
     return true;
 }
 
+bool Cubemap::remove_line_by_object_id(uint32_t id) {
+    if (!id_map.contains(id)) return false;
+    return remove_line(id_map.at(id));
+}
+
+
 CubeMapId Cubemap::add_new_polygon(const PolygonPrimitive& polygon, CubeMapId layer, uint32_t position) {
     if (layer != InvalidId && !primitive_map.contains(layer)) return InvalidId;
     clamp_position(layer, position);
@@ -346,6 +357,12 @@ bool Cubemap::select(CubeMapId id) {
     drawing_updated = true;
     return true;
 }
+
+bool Cubemap::select_by_object_id(uint32_t id) {
+    if (!id_map.contains(id)) return false;
+    return select(id_map.at(id));
+}
+
 
 bool Cubemap::deselect() {
     if (selected_id == UINT32_MAX) return false;

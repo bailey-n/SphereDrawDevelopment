@@ -13,7 +13,7 @@
 #include <iostream>
 
 inline glm::vec4 make_vec4_w1(const glm::vec3& base);
-inline glm::vec3 apply_rotation(const glm::mat4x4& rot, const glm::vec3& vec);
+glm::vec3 apply_rotation(const glm::mat4x4& rot, const glm::vec3& vec);
 std::vector<glm::u8vec4> rgba_white_square_1024();
 std::vector<glm::u8> r_black_square_1024();
 void print_current_bound_VAO();

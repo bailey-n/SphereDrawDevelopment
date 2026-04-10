@@ -100,6 +100,7 @@ public:
 
     // Removes a point. Returns true if deletion was successful (so cmap_id is a valid point id), and false otherwise (if cmap_id is not a valid point id).
     bool remove_point(CubeMapId cmap_id);
+    bool remove_point_by_object_id(uint32_t id);
 
     // Adds new line, given line primitive data. If you want it to be added to the end of a layer, specify the layer id.
     // If you want it to be in a specific position in the layer, specify the layer id and position (will clamp to back if position >= layer size).
@@ -107,6 +108,7 @@ public:
 
     // Removes a point. Returns true if deletion was successful (so cmap_id is a valid line id), and false otherwise (if cmap_id is not a valid line id).
     bool remove_line(CubeMapId cmap_id);
+    bool remove_line_by_object_id(uint32_t id);
 
     // Begins the construction of a new polyline, starting with its first vertex. Ends any current constructions and converts them to a normal object.
     CubeMapId start_line_construction(const glm::vec3& first_vtx, const glm::vec4& color, float width, bool closed=false);
@@ -148,6 +150,7 @@ public:
     [[nodiscard]] std::vector<std::pair<uint32_t, CubeMapId>> get_drawn_elements_at(glm::vec3 pos) const;
 
     bool select(CubeMapId id);
+    bool select_by_object_id(uint32_t id);
     bool deselect();
 
     void export_cubemap(const std::string& filepath);

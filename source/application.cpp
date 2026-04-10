@@ -9,6 +9,8 @@
 #include <array>
 #include <cstring>
 #include <nfd.h>
+
+#include "common_glm_operations.h"
 #include "shapes.h"
 
 namespace {
@@ -238,6 +240,7 @@ GLFWwindow* Application::window = nullptr;
 bool Application::initialized = false;
 bool Application::gui_change = true;
 bool Application::nfd_initialized = false;
+bool Application::mouse_moved = false;
 std::deque<AppAction> Application::event_queue = {};
 std::map<std::pair<int, int>, AppAction> Application::press_key_actions = {};
 std::map<std::pair<int, int>, AppAction> Application::release_key_actions = {};
@@ -480,6 +483,19 @@ void Application::mouseButtonCallback(GLFWwindow *win, int button, int action, i
     if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT) {
         event_queue.emplace_back(CLICK_SPHERE);
     }
+    else if (action == GLFW_RELEASE && button == GLFW_MOUSE_BUTTON_LEFT) {
+        event_queue.emplace_back(UNCLICK_SPHERE);
+    }
+}
+
+void Application::cursorPositionCallback(GLFWwindow *win, double xpos, double ypos) {
+    if (ImGui::GetIO().WantCaptureMouse) {
+        return;
+    }
+    if (!mouse_moved) {
+        event_queue.emplace_back(MOVE_MOUSE);
+        mouse_moved = true;
+    }
 }
 
 void Application::windowSizeCallback(GLFWwindow *win, int width, int height) {
@@ -624,19 +640,26 @@ void Application::handle_event(const AppAction &action) {
             );
 
             if (std::isnan(click_coords.first)) {
-                std::cout << "latitude: NaN\nlongitude: NaN" << std::endl;
+                // std::cout << "latitude: NaN\nlongitude: NaN" << std::endl;
                 break;
             }
 
-            std::cout << "latitude: " << glm::degrees(click_coords.first)
-                      << "\nlongitude: " << glm::degrees(click_coords.second) << std::endl;
+            // std::cout << "latitude: " << glm::degrees(click_coords.first)
+            //          << "\nlongitude: " << glm::degrees(click_coords.second) << std::endl;
+
+            if (!point_tool.armed_for_placement && !polyline_tool.armed_for_placement) {
+                glm::vec3 pos = lat_lon_to_xyz(click_coords.first, click_coords.second, 1.0f);
+                if (project.selectPrimitiveAt(pos)) {
+                    state.mouse_click_position = pos;
+                    state.last_valid_mouse_position = pos;
+                    state.track_mouse_drag = true;
+                }
+            }
 
             switch (state.draw_mode) {
                 case State::DrawMode::Point:
                 {
                     if (!point_tool.armed_for_placement) {
-                        glm::vec3 pos = lat_lon_to_xyz(click_coords.first, click_coords.second, 1.0f);
-                        project.selectPrimitiveAt(pos);
                         break;
                     }
 
@@ -660,8 +683,6 @@ void Application::handle_event(const AppAction &action) {
                 case State::DrawMode::Polyline:
                 {
                     if (!polyline_tool.armed_for_placement) {
-                        glm::vec3 pos = lat_lon_to_xyz(click_coords.first, click_coords.second, 1.0f);
-                        project.selectPrimitiveAt(pos);
                         break;
                     }
 
@@ -675,15 +696,66 @@ void Application::handle_event(const AppAction &action) {
                     break;
 
                 case State::DrawMode::None:
-                    {
-                        glm::vec3 pos = lat_lon_to_xyz(click_coords.first, click_coords.second, 1.0f);
-                        project.selectPrimitiveAt(pos);
                         break;
-                    }
+
                 default:
                     break;
             }
+            break;
+        }
 
+        case UNCLICK_SPHERE:
+        {
+            if (!state.track_mouse_drag) break;
+
+            glfwGetCursorPos(window, &x_pos, &y_pos);
+
+            int current_width = 0;
+            int current_height = 0;
+            glfwGetWindowSize(window, &current_width, &current_height);
+
+            click_coords = sphere_click_lat_lon(
+                    camera.get_position(),
+                    camera.get_up(),
+                    1.0f,
+                    glm::vec2((float)x_pos, (float)y_pos),
+                    (float)current_width, (float)current_height,
+                    glm::radians(60.0)
+            );
+
+            glm::vec3 final_position = std::isnan(click_coords.first) ? state.last_valid_mouse_position : lat_lon_to_xyz(click_coords.first, click_coords.second, 1.0f);
+            if (glm::dot(final_position, state.mouse_click_position) <= 0.99995) { // Only rotate if mouse has moved significantly
+                project.rotateSelectedPrimitive(state.mouse_click_position, final_position);
+            }
+
+            state.track_mouse_drag = false;
+            state.mouse_click_position = final_position;
+            state.last_valid_mouse_position = final_position;
+
+            break;
+        }
+
+        case MOVE_MOUSE:
+        {
+            if (!state.track_mouse_drag) break;
+
+            glfwGetCursorPos(window, &x_pos, &y_pos);
+
+            int current_width = 0;
+            int current_height = 0;
+            glfwGetWindowSize(window, &current_width, &current_height);
+
+            click_coords = sphere_click_lat_lon(
+                    camera.get_position(),
+                    camera.get_up(),
+                    1.0f,
+                    glm::vec2((float)x_pos, (float)y_pos),
+                    (float)current_width, (float)current_height,
+                    glm::radians(60.0)
+            );
+
+            glm::vec3 new_position = std::isnan(click_coords.first) ? state.last_valid_mouse_position : lat_lon_to_xyz(click_coords.first, click_coords.second, 1.0f);
+            state.last_valid_mouse_position = new_position;
             break;
         }
 
