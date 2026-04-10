@@ -104,7 +104,13 @@ public:
                     cubemap_->add_new_line(*line);
                 }
             }
-            //TODO: add polygon here next
+            //TODO: Once we have polygon rending finish this, only adds polygon outline for now while waiting on polygon rendering
+            else if (base->getType() == PrimitiveType::Polygon) {
+                if (auto* polygon = dynamic_cast<PolygonPrimitive*>(base)) {
+                    PolylinePrimitive outline = makeOutlineFallbackForPolygon(*polygon);
+                    cubemap_->add_new_line(outline);
+                }
+            }
         }
 
         return id;
@@ -153,8 +159,14 @@ public:
                         cubemap_->add_new_line(*line);
                     }
                 }
-
-                // TODO (next milestones): Polygon / render-layer mapping
+                //TODO: Once we have polygon rending finish this, only adds polygon outline for now while waiting on polygon rendering
+                else if (base->getType() == PrimitiveType::Polygon) {
+                    auto* polygon = dynamic_cast<PolygonPrimitive*>(base);
+                    if (polygon) {
+                        PolylinePrimitive outline = makeOutlineFallbackForPolygon(*polygon);
+                        cubemap_->add_new_line(outline);
+                    }
+                }
             }
         }
     }
@@ -174,6 +186,21 @@ public:
     }
 
 private:
+
+    static PolylinePrimitive makeOutlineFallbackForPolygon(const PolygonPrimitive& polygon) {
+        PolylinePrimitive outline(polygon.getID());
+        outline.setName(polygon.getName());
+        outline.color = polygon.color;
+        outline.width = 0.007f;
+        outline.verts = polygon.verts;
+
+        // Close the loop explicitly for the current line renderer.
+        if (outline.verts.size() >= 3) {
+            outline.verts.push_back(outline.verts.front());
+        }
+
+        return outline;
+    }
 
     static std::string primitiveTypeDisplayName(PrimitiveType type) {
         switch (type) {
