@@ -43,6 +43,14 @@ namespace {
         }
     }
 
+    std::string ensurePngExtension(const std::string& path) {
+        std::filesystem::path p(path);
+        if (p.has_extension() && p.extension() == ".png") {
+            return path;
+        }
+        return path + ".png";
+    }
+
     float computeUiScale(GLFWwindow* window) {
         int width = 0;
         int height = 0;
@@ -1024,14 +1032,79 @@ void Application::render_frame() {
 
     switch (menu.cubemapAction) {
         case CubemapMenuAction::ImportCubemap:
-            project_status = "Cubemap import is not implemented yet.";
-            show_project_status = true;
+        {
+            if (!nfd_initialized) {
+                project_status = "Cubemap import failed:\nNative file dialog is not initialized.";
+                show_project_status = true;
+                break;
+            }
+
+            const nfdfilteritem_t filters[3] = {
+                    { "PNG Image", "png" },
+                    { "JPEG Image", "jpg" },
+                    { "JPEG Image", "jpeg" }
+            };
+
+            nfdchar_t* outPath = nullptr;
+            nfdresult_t r = NFD_OpenDialog(&outPath, filters, 3, nullptr);
+
+            if (r == NFD_OKAY && outPath) {
+                std::string cubemapPath = outPath;
+                NFD_FreePath(outPath);
+
+                if (!std::filesystem::exists(cubemapPath)) {
+                    project_status = "Cubemap import failed:\nFile does not exist:\n" + cubemapPath;
+                    show_project_status = true;
+                    break;
+                }
+
+                renderer.import_base_cubemap(cubemapPath);
+                project_status = "Imported cubemap from:\n" + cubemapPath;
+                show_project_status = true;
+            }
+            else if (r == NFD_ERROR) {
+                project_status = std::string("Cubemap import dialog error:\n") +
+                                 (NFD_GetError() ? NFD_GetError() : "Unknown error");
+                show_project_status = true;
+            }
             break;
+        }
 
         case CubemapMenuAction::ExportCubemap:
-            project_status = "Cubemap export is not implemented yet.";
-            show_project_status = true;
+        {
+            if (!nfd_initialized) {
+                project_status = "Cubemap export failed:\nNative file dialog is not initialized.";
+                show_project_status = true;
+                break;
+            }
+
+            const nfdfilteritem_t filters[1] = {
+                    { "PNG Image", "png" }
+            };
+
+            nfdchar_t* outPath = nullptr;
+            nfdresult_t r = NFD_SaveDialog(&outPath, filters, 1, nullptr, "cubemap.png");
+
+            if (r == NFD_OKAY && outPath) {
+                std::string exportPath = ensurePngExtension(outPath);
+                NFD_FreePath(outPath);
+
+                std::filesystem::path p(exportPath);
+                if (p.has_parent_path()) {
+                    std::filesystem::create_directories(p.parent_path());
+                }
+
+                renderer.export_cubemap(exportPath);
+                project_status = "Exported cubemap to:\n" + exportPath;
+                show_project_status = true;
+            }
+            else if (r == NFD_ERROR) {
+                project_status = std::string("Cubemap export dialog error:\n") +
+                                 (NFD_GetError() ? NFD_GetError() : "Unknown error");
+                show_project_status = true;
+            }
             break;
+        }
 
         case CubemapMenuAction::None:
             break;
