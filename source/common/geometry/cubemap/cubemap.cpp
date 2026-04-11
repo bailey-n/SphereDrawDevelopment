@@ -95,17 +95,19 @@ CubeMapId Cubemap::activate_new_id() {
     if (is_full()) return InvalidId;
 
     // temp variable to store old lowest_unused_id (which will become active)
-    CubeMapId new_id = lowest_unused_id;
+    CubeMapId new_id;
+    if (deactivated_ids.empty()) {
+        new_id = feature_count;
+    }
+    else {
+        new_id = deactivated_ids.front();
+        deactivated_ids.pop_front();
+    }
     active_ids.insert(new_id);
 
     // Set new lowest_unused_id
     feature_count++;
-    if (deactivated_ids.empty()) { lowest_unused_id = feature_count; }
-    else {
-        // Ensures that any holes from deactivation are filled first
-        lowest_unused_id = deactivated_ids.front();
-        deactivated_ids.pop_front();
-    }
+    lowest_unused_id = deactivated_ids.empty() ? feature_count : deactivated_ids.front();
     return new_id;
 }
 
@@ -119,7 +121,7 @@ void Cubemap::remove_id(CubeMapId id) {
     feature_count--;
 
     if (deactivated_ids.empty() || (id < lowest_unused_id)) {
-        //deactivated_ids.push_front(id);
+        deactivated_ids.push_front(id);
         lowest_unused_id = id;
         return;
     }
@@ -421,4 +423,8 @@ bool Cubemap::update_line_primitive(const PolylinePrimitive& primitive) {
     add_new_line(primitive);
     select_by_object_id(primitive.getID());
     return true;
+}
+
+bool Cubemap::contains_cubemap_id(CubeMapId id) {
+    return is_active_id(id);
 }
