@@ -72,10 +72,14 @@ void Cubemap::reset() {
     layer_map.clear();
     primitive_map.clear();
 
+    id_map.clear();
+    primitive_ids.clear();
+
     deactivated_ids.clear();
     active_ids.clear();
     lowest_unused_id = 0;
     feature_count = 0;
+    selected_id = UINT32_MAX;
     drawing_updated = true;
 }
 
@@ -115,7 +119,7 @@ void Cubemap::remove_id(CubeMapId id) {
     feature_count--;
 
     if (deactivated_ids.empty() || (id < lowest_unused_id)) {
-        deactivated_ids.push_front(id);
+        //deactivated_ids.push_front(id);
         lowest_unused_id = id;
         return;
     }
@@ -222,6 +226,7 @@ CubeMapId Cubemap::add_new_point(const PointPrimitive &point, CubeMapId layer, u
     drawing_updated = true;
 
     id_map.emplace(render_id, point.getID());
+    primitive_ids.emplace(point.getID(), render_id);
 
     return render_id;
 }
@@ -245,9 +250,15 @@ bool Cubemap::remove_point(CubeMapId cmap_id) {
     remove_id(cmap_id);
     drawing_updated = true;
 
+    if (primitive_ids.contains(id_map.at(cmap_id))) primitive_ids.erase(id_map.at(cmap_id));
     id_map.erase(cmap_id);
 
     return true;
+}
+
+bool Cubemap::remove_point_by_object_id(uint32_t id) {
+    if (!primitive_ids.contains(id)) return false;
+    return remove_point(primitive_ids.at(id));
 }
 
 CubeMapId Cubemap::add_new_line(const PolylinePrimitive& line, CubeMapId layer, uint32_t position) {
@@ -275,6 +286,7 @@ CubeMapId Cubemap::add_new_line(const PolylinePrimitive& line, CubeMapId layer, 
     drawing_updated = true;
 
     id_map.emplace(render_id, line.getID());
+    primitive_ids.emplace(line.getID(), render_id);
 
     return render_id;
 }
@@ -298,10 +310,17 @@ bool Cubemap::remove_line(CubeMapId cmap_id) {
     remove_id(cmap_id);
     drawing_updated = true;
 
+    if (primitive_ids.contains(id_map.at(cmap_id))) primitive_ids.erase(id_map.at(cmap_id));
     id_map.erase(cmap_id);
 
     return true;
 }
+
+bool Cubemap::remove_line_by_object_id(uint32_t id) {
+    if (!primitive_ids.contains(id)) return false;
+    return remove_line(primitive_ids.at(id));
+}
+
 
 CubeMapId Cubemap::add_new_polygon(const PolygonPrimitive& polygon, CubeMapId layer, uint32_t position) {
     if (layer != InvalidId && !primitive_map.contains(layer)) return InvalidId;
@@ -347,6 +366,12 @@ bool Cubemap::select(CubeMapId id) {
     return true;
 }
 
+bool Cubemap::select_by_object_id(uint32_t id) {
+    if (!primitive_ids.contains(id)) return false;
+    return select(primitive_ids.at(id));
+}
+
+
 bool Cubemap::deselect() {
     if (selected_id == UINT32_MAX) return false;
     selected_id = UINT32_MAX;
@@ -378,4 +403,22 @@ void Cubemap::import_base_cubemap(const std::string &filepath) {
     cube_faces[AntiMeridian].set_base_cubemap(filepath);
     cube_faces[South].set_base_cubemap(filepath);
     drawing_updated = true;
+}
+
+bool Cubemap::update_point_primitive(const PointPrimitive& primitive) {
+    if (!primitive_ids.contains(primitive.getID())) return false;
+    deselect();
+    remove_point_by_object_id(primitive.getID());
+    add_new_point(primitive);
+    select_by_object_id(primitive.getID());
+    return true;
+}
+
+bool Cubemap::update_line_primitive(const PolylinePrimitive& primitive) {
+    if (!primitive_ids.contains(primitive.getID())) return false;
+    deselect();
+    remove_line_by_object_id(primitive.getID());
+    add_new_line(primitive);
+    select_by_object_id(primitive.getID());
+    return true;
 }

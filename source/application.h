@@ -25,6 +25,7 @@ class Application {
     static bool initialized;
     static bool nfd_initialized;
     static bool gui_change;
+    static bool mouse_moved;
     static std::deque<AppAction> event_queue;
     // Maps key, modifier bits to an associated shortcut action
     static std::map<std::pair<int, int>, AppAction> press_key_actions;
@@ -59,6 +60,7 @@ class Application {
     // Event callbacks
     static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
     static void mouseButtonCallback(GLFWwindow *win, int button, int action, int mods);
+    static void cursorPositionCallback(GLFWwindow *win, double xpos, double ypos);
     static void windowSizeCallback(GLFWwindow* win, int width, int height);
 
     // Internal struct to hold state values
@@ -77,6 +79,10 @@ class Application {
         double camera_radius = 2.0;
         float camera_rotate_speed = 1.0f;
         double camera_zoom_speed = 1.0f;
+
+        bool track_mouse_drag = false;
+        glm::vec3 mouse_click_position;
+        glm::vec3 last_valid_mouse_position;
 
         enum DrawMode : unsigned char {
             None = 0,
@@ -107,6 +113,16 @@ class Application {
         float width = 0.007f;
         std::vector<glm::vec3> verts;
         ImVec2 panel_size = ImVec2(0.0f, 0.0f);
+        std::vector<CubeMapId> temp_vertices_render_ids;
+        CubeMapId temp_line_render_id;
+
+        void reset(Cubemap& cubemap) {
+            verts.clear();
+            for (auto id: temp_vertices_render_ids) cubemap.remove_point(id);
+            cubemap.remove_line(temp_line_render_id);
+            temp_vertices_render_ids.clear();
+            temp_line_render_id = UINT32_MAX;
+        }
     };
 
     PolylineToolState polyline_tool;

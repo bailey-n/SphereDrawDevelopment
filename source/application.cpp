@@ -9,6 +9,8 @@
 #include <array>
 #include <cstring>
 #include <nfd.h>
+
+#include "common_glm_operations.h"
 #include "shapes.h"
 
 namespace {
@@ -246,6 +248,7 @@ GLFWwindow* Application::window = nullptr;
 bool Application::initialized = false;
 bool Application::gui_change = true;
 bool Application::nfd_initialized = false;
+bool Application::mouse_moved = false;
 std::deque<AppAction> Application::event_queue = {};
 std::map<std::pair<int, int>, AppAction> Application::press_key_actions = {};
 std::map<std::pair<int, int>, AppAction> Application::release_key_actions = {};
@@ -491,6 +494,19 @@ void Application::mouseButtonCallback(GLFWwindow *win, int button, int action, i
     if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT) {
         event_queue.emplace_back(CLICK_SPHERE);
     }
+    else if (action == GLFW_RELEASE && button == GLFW_MOUSE_BUTTON_LEFT) {
+        event_queue.emplace_back(UNCLICK_SPHERE);
+    }
+}
+
+void Application::cursorPositionCallback(GLFWwindow *win, double xpos, double ypos) {
+    if (ImGui::GetIO().WantCaptureMouse) {
+        return;
+    }
+    if (!mouse_moved) {
+        event_queue.emplace_back(MOVE_MOUSE);
+        mouse_moved = true;
+    }
 }
 
 void Application::windowSizeCallback(GLFWwindow *win, int width, int height) {
@@ -670,19 +686,26 @@ void Application::handle_event(const AppAction &action) {
             );
 
             if (std::isnan(click_coords.first)) {
-                std::cout << "latitude: NaN\nlongitude: NaN" << std::endl;
+                // std::cout << "latitude: NaN\nlongitude: NaN" << std::endl;
                 break;
             }
 
-            std::cout << "latitude: " << glm::degrees(click_coords.first)
-                      << "\nlongitude: " << glm::degrees(click_coords.second) << std::endl;
+            // std::cout << "latitude: " << glm::degrees(click_coords.first)
+            //          << "\nlongitude: " << glm::degrees(click_coords.second) << std::endl;
+
+            if (!point_tool.armed_for_placement && !polyline_tool.armed_for_placement) {
+                glm::vec3 pos = lat_lon_to_xyz(click_coords.first, click_coords.second, 1.0f);
+                if (project.selectPrimitiveAt(pos)) {
+                    state.mouse_click_position = pos;
+                    state.last_valid_mouse_position = pos;
+                    state.track_mouse_drag = true;
+                }
+            }
 
             switch (state.draw_mode) {
                 case State::DrawMode::Point:
                 {
                     if (!point_tool.armed_for_placement) {
-                        glm::vec3 pos = lat_lon_to_xyz(click_coords.first, click_coords.second, 1.0f);
-                        project.selectPrimitiveAt(pos);
                         break;
                     }
 
@@ -706,8 +729,6 @@ void Application::handle_event(const AppAction &action) {
                 case State::DrawMode::Polyline:
                 {
                     if (!polyline_tool.armed_for_placement) {
-                        glm::vec3 pos = lat_lon_to_xyz(click_coords.first, click_coords.second, 1.0f);
-                        project.selectPrimitiveAt(pos);
                         break;
                     }
 
@@ -730,15 +751,66 @@ void Application::handle_event(const AppAction &action) {
                 }
 
                 case State::DrawMode::None:
-                    {
-                        glm::vec3 pos = lat_lon_to_xyz(click_coords.first, click_coords.second, 1.0f);
-                        project.selectPrimitiveAt(pos);
-                        break;
-                    }
+                    break;
+
                 default:
                     break;
             }
+            break;
+        }
 
+        case UNCLICK_SPHERE:
+        {
+            if (!state.track_mouse_drag) break;
+
+            glfwGetCursorPos(window, &x_pos, &y_pos);
+
+            int current_width = 0;
+            int current_height = 0;
+            glfwGetWindowSize(window, &current_width, &current_height);
+
+            click_coords = sphere_click_lat_lon(
+                    camera.get_position(),
+                    camera.get_up(),
+                    1.0f,
+                    glm::vec2((float)x_pos, (float)y_pos),
+                    (float)current_width, (float)current_height,
+                    glm::radians(60.0)
+            );
+
+            glm::vec3 final_position = std::isnan(click_coords.first) ? state.last_valid_mouse_position : lat_lon_to_xyz(click_coords.first, click_coords.second, 1.0f);
+            if (glm::dot(final_position, state.mouse_click_position) <= 0.99995) { // Only rotate if mouse has moved significantly
+                project.rotateSelectedPrimitive(state.mouse_click_position, final_position);
+            }
+
+            state.track_mouse_drag = false;
+            state.mouse_click_position = final_position;
+            state.last_valid_mouse_position = final_position;
+
+            break;
+        }
+
+        case MOVE_MOUSE:
+        {
+            if (!state.track_mouse_drag) break;
+
+            glfwGetCursorPos(window, &x_pos, &y_pos);
+
+            int current_width = 0;
+            int current_height = 0;
+            glfwGetWindowSize(window, &current_width, &current_height);
+
+            click_coords = sphere_click_lat_lon(
+                    camera.get_position(),
+                    camera.get_up(),
+                    1.0f,
+                    glm::vec2((float)x_pos, (float)y_pos),
+                    (float)current_width, (float)current_height,
+                    glm::radians(60.0)
+            );
+
+            glm::vec3 new_position = std::isnan(click_coords.first) ? state.last_valid_mouse_position : lat_lon_to_xyz(click_coords.first, click_coords.second, 1.0f);
+            state.last_valid_mouse_position = new_position;
             break;
         }
 
@@ -817,7 +889,11 @@ void Application::update_window() {
 }
 
 void Application::refreshPolylinePreview() {
-    project.rebuildAttachedCubemapFromProject();
+    // project.rebuildAttachedCubemapFromProject();
+    if (polyline_tool.verts.size() < 2 && polyline_tool.temp_line_render_id != UINT32_MAX) {
+        renderer.remove_line(polyline_tool.temp_line_render_id);
+        polyline_tool.temp_line_render_id = UINT32_MAX;
+    }
 
     if (polyline_tool.verts.empty()) {
         return;
@@ -829,7 +905,8 @@ void Application::refreshPolylinePreview() {
         preview_point.p = polyline_tool.verts[i];
         preview_point.color = polyline_tool.color;
         preview_point.size = std::clamp(polyline_tool.width * 0.4f, 0.008f, 0.03f);
-        renderer.add_new_point(preview_point);
+        auto temp_vertex_id = renderer.add_new_point(preview_point);
+        polyline_tool.temp_vertices_render_ids.emplace_back(temp_vertex_id);
     }
 
     // Preview the in-progress line once we have at least 2 vertices
@@ -838,7 +915,10 @@ void Application::refreshPolylinePreview() {
         preview_line.color = polyline_tool.color;
         preview_line.width = polyline_tool.width;
         preview_line.verts = polyline_tool.verts;
-        renderer.add_new_line(preview_line);
+        if (polyline_tool.verts.size() > 2) {
+            renderer.remove_line(polyline_tool.temp_line_render_id);
+        }
+        polyline_tool.temp_line_render_id = renderer.add_new_line(preview_line);
     }
 }
 
@@ -986,6 +1066,7 @@ void Application::render_frame() {
             polyline_tool.show_panel = false;
             polyline_tool.armed_for_placement = false;
             polyline_tool.verts.clear();
+            polyline_tool.reset(renderer);
 
             polygon_tool.show_panel = false;
             polygon_tool.armed_for_placement = false;
@@ -1002,6 +1083,7 @@ void Application::render_frame() {
             polyline_tool.show_panel = true;
             polyline_tool.armed_for_placement = false;
             polyline_tool.verts.clear();
+            polyline_tool.reset(renderer);
 
             polygon_tool.show_panel = false;
             polygon_tool.armed_for_placement = false;
@@ -1018,6 +1100,7 @@ void Application::render_frame() {
             polyline_tool.show_panel = false;
             polyline_tool.armed_for_placement = false;
             polyline_tool.verts.clear();
+            polyline_tool.reset(renderer);
 
             polygon_tool.show_panel = true;
             polygon_tool.armed_for_placement = false;
@@ -1326,7 +1409,7 @@ void Application::render_frame() {
             if (ImGui::Button(polyline_tool.armed_for_placement ? "Adding Vertices" : "Start Polyline", ImVec2(button_width, 0.0f))) {
                 state.draw_mode = State::DrawMode::Polyline;
                 polyline_tool.armed_for_placement = true;
-                if (polyline_tool.verts.empty()) {
+                if (!polyline_tool.verts.empty()) {
                     polyline_tool.verts.clear();
                 }
             }
@@ -1339,6 +1422,7 @@ void Application::render_frame() {
             }
             if (!can_finish) ImGui::EndDisabled();
 
+                // project.rebuildAttachedCubemapFromProject();
             ImGui::Spacing();
 
             float lower_button_width = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
@@ -1385,6 +1469,7 @@ void Application::render_frame() {
         if (!polyline_tool.show_panel) {
             polyline_tool.armed_for_placement = false;
             polyline_tool.verts.clear();
+            polyline_tool.reset(renderer);
             project.rebuildAttachedCubemapFromProject();
         }
     }
