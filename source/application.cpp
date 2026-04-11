@@ -696,7 +696,7 @@ void Application::handle_event(const AppAction &action) {
                     break;
 
                 case State::DrawMode::None:
-                        break;
+                    break;
 
                 default:
                     break;
@@ -834,7 +834,11 @@ void Application::update_window() {
 }
 
 void Application::refreshPolylinePreview() {
-    project.rebuildAttachedCubemapFromProject();
+    // project.rebuildAttachedCubemapFromProject();
+    if (polyline_tool.verts.size() < 2 && polyline_tool.temp_line_render_id != UINT32_MAX) {
+        renderer.remove_line(polyline_tool.temp_line_render_id);
+        polyline_tool.temp_line_render_id = UINT32_MAX;
+    }
 
     if (polyline_tool.verts.empty()) {
         return;
@@ -846,7 +850,8 @@ void Application::refreshPolylinePreview() {
         preview_point.p = polyline_tool.verts[i];
         preview_point.color = polyline_tool.color;
         preview_point.size = std::clamp(polyline_tool.width * 0.4f, 0.008f, 0.03f);
-        renderer.add_new_point(preview_point);
+        auto temp_vertex_id = renderer.add_new_point(preview_point);
+        polyline_tool.temp_vertices_render_ids.emplace_back(temp_vertex_id);
     }
 
     // Preview the in-progress line once we have at least 2 vertices
@@ -855,7 +860,10 @@ void Application::refreshPolylinePreview() {
         preview_line.color = polyline_tool.color;
         preview_line.width = polyline_tool.width;
         preview_line.verts = polyline_tool.verts;
-        renderer.add_new_line(preview_line);
+        if (polyline_tool.verts.size() > 2) {
+            renderer.remove_line(polyline_tool.temp_line_render_id);
+        }
+        polyline_tool.temp_line_render_id = renderer.add_new_line(preview_line);
     }
 }
 
@@ -886,6 +894,7 @@ void Application::render_frame() {
             polyline_tool.show_panel = false;
             polyline_tool.armed_for_placement = false;
             polyline_tool.verts.clear();
+            polyline_tool.reset(renderer);
             project.rebuildAttachedCubemapFromProject();
             break;
 
@@ -897,6 +906,7 @@ void Application::render_frame() {
             polyline_tool.show_panel = true;
             polyline_tool.armed_for_placement = false;
             polyline_tool.verts.clear();
+            polyline_tool.reset(renderer);
             project.rebuildAttachedCubemapFromProject();
             break;
 
@@ -908,6 +918,7 @@ void Application::render_frame() {
             polyline_tool.show_panel = false;
             polyline_tool.armed_for_placement = false;
             polyline_tool.verts.clear();
+            polyline_tool.reset(renderer);
             project.rebuildAttachedCubemapFromProject();
             break;
 
@@ -1140,7 +1151,7 @@ void Application::render_frame() {
             if (ImGui::Button(polyline_tool.armed_for_placement ? "Adding Vertices" : "Start Polyline", ImVec2(button_width, 0.0f))) {
                 state.draw_mode = State::DrawMode::Polyline;
                 polyline_tool.armed_for_placement = true;
-                if (polyline_tool.verts.empty()) {
+                if (!polyline_tool.verts.empty()) {
                     polyline_tool.verts.clear();
                 }
             }
@@ -1156,14 +1167,16 @@ void Application::render_frame() {
                 line->verts = polyline_tool.verts;
                 line->setName(project.makeDefaultPrimitiveName(PrimitiveType::Polyline));
 
-                project.addPrimitiveToDefaultLayer(std::move(line));
-                project.rebuildAttachedCubemapFromProject();
+                // project.rebuildAttachedCubemapFromProject();
 
                 outliner.selected_primitive_id = newId;
                 outliner.name_buffer_primitive_id = 0;
 
                 polyline_tool.armed_for_placement = false;
                 polyline_tool.verts.clear();
+                polyline_tool.reset(renderer);
+
+                project.addPrimitiveToDefaultLayer(std::move(line));
             }
             if (!can_finish) ImGui::EndDisabled();
 
@@ -1171,6 +1184,7 @@ void Application::render_frame() {
             if (ImGui::Button("Cancel", ImVec2(-1.0f, 0.0f))) {
                 polyline_tool.armed_for_placement = false;
                 polyline_tool.verts.clear();
+                polyline_tool.reset(renderer);
                 project.rebuildAttachedCubemapFromProject();
             }
 
@@ -1204,6 +1218,7 @@ void Application::render_frame() {
         if (!polyline_tool.show_panel) {
             polyline_tool.armed_for_placement = false;
             polyline_tool.verts.clear();
+            polyline_tool.reset(renderer);
             project.rebuildAttachedCubemapFromProject();
         }
     }

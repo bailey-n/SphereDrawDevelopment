@@ -113,6 +113,16 @@ class Application {
         float width = 0.007f;
         std::vector<glm::vec3> verts;
         ImVec2 panel_size = ImVec2(0.0f, 0.0f);
+        std::vector<CubeMapId> temp_vertices_render_ids;
+        CubeMapId temp_line_render_id;
+
+        void reset(Cubemap& cubemap) {
+            verts.clear();
+            for (auto id: temp_vertices_render_ids) cubemap.remove_point(id);
+            cubemap.remove_line(temp_line_render_id);
+            temp_vertices_render_ids.clear();
+            temp_line_render_id = UINT32_MAX;
+        }
     };
 
     PolylineToolState polyline_tool;

@@ -37,6 +37,7 @@ class Cubemap {
     CubeFace cube_faces[6];
 
     std::map<CubeMapId, uint32_t> id_map;
+    std::map<uint32_t, CubeMapId> primitive_ids;
 
     uint32_t CUBEFACE_SIZE = 1024;
 
@@ -155,6 +156,9 @@ public:
 
     void export_cubemap(const std::string& filepath);
     void import_base_cubemap(const std::string& filepath);
+
+    bool update_point_primitive(const PointPrimitive& point);
+    bool update_line_primitive(const PolylinePrimitive& line);
 };
 
 
