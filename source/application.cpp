@@ -45,6 +45,14 @@ namespace {
         }
     }
 
+    std::string ensurePngExtension(const std::string& path) {
+        std::filesystem::path p(path);
+        if (p.has_extension() && p.extension() == ".png") {
+            return path;
+        }
+        return path + ".png";
+    }
+
     float computeUiScale(GLFWwindow* window) {
         int width = 0;
         int height = 0;
@@ -419,6 +427,9 @@ void Application::setup_key_bindings() {
     release_key_actions.emplace(std::pair(GLFW_KEY_R, 0), CAMERA_RESET);
 
     release_key_actions.emplace(std::pair(GLFW_KEY_H, 0), DRAW_MODE_ROTATE);
+    press_key_actions.emplace(std::pair(GLFW_KEY_BACKSPACE, 0), DRAW_UNDO_LAST_VERTEX);
+    press_key_actions.emplace(std::pair(GLFW_KEY_ENTER, 0), DRAW_FINISH_SHAPE);
+    press_key_actions.emplace(std::pair(GLFW_KEY_KP_ENTER, 0), DRAW_FINISH_SHAPE);
 }
 
 
@@ -622,6 +633,41 @@ void Application::handle_event(const AppAction &action) {
             camera.set_up(glm::vec3(0.0f, 1.0f, 0.0f));
             break;
 
+        case DRAW_UNDO_LAST_VERTEX:
+            switch (state.draw_mode) {
+                case State::DrawMode::Polyline:
+                    undoActivePolylineVertex();
+                    break;
+
+                case State::DrawMode::Polygon:
+                    undoActivePolygonVertex();
+                    break;
+
+                case State::DrawMode::Point:
+                case State::DrawMode::None:
+                default:
+                    break;
+            }
+            break;
+
+        case DRAW_FINISH_SHAPE:
+            switch (state.draw_mode) {
+                case State::DrawMode::Polyline:
+                    finishActivePolyline();
+                    break;
+
+                case State::DrawMode::Polygon:
+                    finishActivePolygon();
+                    break;
+
+                case State::DrawMode::Point:
+                case State::DrawMode::None:
+                default:
+                    break;
+            }
+            break;
+
+
         case CLICK_SPHERE:
         {
             glfwGetCursorPos(window, &x_pos, &y_pos);
@@ -693,7 +739,16 @@ void Application::handle_event(const AppAction &action) {
                 }
 
                 case State::DrawMode::Polygon:
+                {
+                    if (!polygon_tool.armed_for_placement) {
+                        break;
+                    }
+
+                    glm::vec3 pos = lat_lon_to_xyz(click_coords.first, click_coords.second, 1.0f);
+                    polygon_tool.verts.push_back(pos);
+                    refreshPolygonPreview();
                     break;
+                }
 
                 case State::DrawMode::None:
                     break;
@@ -867,6 +922,123 @@ void Application::refreshPolylinePreview() {
     }
 }
 
+void Application::refreshPolygonPreview() {
+    project.rebuildAttachedCubemapFromProject();
+
+    if (polygon_tool.verts.empty()) {
+        return;
+    }
+
+    // Preview clicked vertices as temporary points
+    for (size_t i = 0; i < polygon_tool.verts.size(); ++i) {
+        PointPrimitive preview_point(3800000000u - static_cast<uint32_t>(i));
+        preview_point.p = polygon_tool.verts[i];
+        preview_point.color = polygon_tool.color;
+        preview_point.size = 0.01f;
+        renderer.add_new_point(preview_point);
+    }
+
+    // Preview the polygon boundary using an ordinary polyline for now.
+    // Do NOT call renderer.add_new_polygon(...) yet because backend polygon
+    // rendering is not implemented in cubemap.cpp.
+    if (polygon_tool.verts.size() >= 2) {
+        PolylinePrimitive preview_outline(3700000000u);
+        preview_outline.color = polygon_tool.color;
+        preview_outline.width = 0.007f;
+        preview_outline.verts = polygon_tool.verts;
+
+        // Close the loop once we have enough vertices to look like a polygon.
+        if (polygon_tool.verts.size() >= 3) {
+            preview_outline.verts.push_back(polygon_tool.verts.front());
+        }
+
+        renderer.add_new_line(preview_outline);
+    }
+}
+
+void Application::undoActivePolylineVertex() {
+    if (!polyline_tool.armed_for_placement || polyline_tool.verts.empty()) {
+        return;
+    }
+
+    polyline_tool.verts.pop_back();
+
+    if (polyline_tool.verts.empty()) {
+        project.rebuildAttachedCubemapFromProject();
+    } else {
+        refreshPolylinePreview();
+    }
+}
+
+void Application::undoActivePolygonVertex() {
+    if (!polygon_tool.armed_for_placement || polygon_tool.verts.empty()) {
+        return;
+    }
+
+    polygon_tool.verts.pop_back();
+
+    if (polygon_tool.verts.empty()) {
+        project.rebuildAttachedCubemapFromProject();
+    } else {
+        refreshPolygonPreview();
+    }
+}
+
+void Application::finishActivePolyline() {
+    if (!polyline_tool.armed_for_placement || polyline_tool.verts.size() < 2) {
+        return;
+    }
+
+    uint32_t newId = project.nextPrimitiveID();
+    auto line = std::make_unique<PolylinePrimitive>(newId);
+    line->color = polyline_tool.color;
+    line->width = polyline_tool.width;
+    line->verts = polyline_tool.verts;
+    line->setName(project.makeDefaultPrimitiveName(PrimitiveType::Polyline));
+
+    project.addPrimitiveToDefaultLayer(std::move(line));
+    project.rebuildAttachedCubemapFromProject();
+
+    outliner.selected_primitive_id = newId;
+    outliner.name_buffer_primitive_id = 0;
+
+    polyline_tool.armed_for_placement = false;
+    polyline_tool.verts.clear();
+}
+
+void Application::finishActivePolygon() {
+    if (!polygon_tool.armed_for_placement || polygon_tool.verts.size() < 3) {
+        return;
+    }
+
+    uint32_t newId = project.nextPrimitiveID();
+    auto polygon = std::make_unique<PolygonPrimitive>(newId);
+    polygon->color = polygon_tool.color;
+    polygon->verts = polygon_tool.verts;
+    polygon->setName(project.makeDefaultPrimitiveName(PrimitiveType::Polygon));
+
+    project.addPrimitiveToDefaultLayer(std::move(polygon));
+    project.rebuildAttachedCubemapFromProject();
+
+    outliner.selected_primitive_id = newId;
+    outliner.name_buffer_primitive_id = 0;
+
+    polygon_tool.armed_for_placement = false;
+    polygon_tool.verts.clear();
+}
+
+void Application::cancelActivePolyline() {
+    polyline_tool.armed_for_placement = false;
+    polyline_tool.verts.clear();
+    project.rebuildAttachedCubemapFromProject();
+}
+
+void Application::cancelActivePolygon() {
+    polygon_tool.armed_for_placement = false;
+    polygon_tool.verts.clear();
+    project.rebuildAttachedCubemapFromProject();
+}
+
 void Application::render_frame() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -895,6 +1067,11 @@ void Application::render_frame() {
             polyline_tool.armed_for_placement = false;
             polyline_tool.verts.clear();
             polyline_tool.reset(renderer);
+
+            polygon_tool.show_panel = false;
+            polygon_tool.armed_for_placement = false;
+            polygon_tool.verts.clear();
+
             project.rebuildAttachedCubemapFromProject();
             break;
 
@@ -907,6 +1084,11 @@ void Application::render_frame() {
             polyline_tool.armed_for_placement = false;
             polyline_tool.verts.clear();
             polyline_tool.reset(renderer);
+
+            polygon_tool.show_panel = false;
+            polygon_tool.armed_for_placement = false;
+            polygon_tool.verts.clear();
+
             project.rebuildAttachedCubemapFromProject();
             break;
 
@@ -919,6 +1101,11 @@ void Application::render_frame() {
             polyline_tool.armed_for_placement = false;
             polyline_tool.verts.clear();
             polyline_tool.reset(renderer);
+
+            polygon_tool.show_panel = true;
+            polygon_tool.armed_for_placement = false;
+            polygon_tool.verts.clear();
+
             project.rebuildAttachedCubemapFromProject();
             break;
 
@@ -928,14 +1115,79 @@ void Application::render_frame() {
 
     switch (menu.cubemapAction) {
         case CubemapMenuAction::ImportCubemap:
-            project_status = "Cubemap import is not implemented yet.";
-            show_project_status = true;
+        {
+            if (!nfd_initialized) {
+                project_status = "Cubemap import failed:\nNative file dialog is not initialized.";
+                show_project_status = true;
+                break;
+            }
+
+            const nfdfilteritem_t filters[3] = {
+                    { "PNG Image", "png" },
+                    { "JPEG Image", "jpg" },
+                    { "JPEG Image", "jpeg" }
+            };
+
+            nfdchar_t* outPath = nullptr;
+            nfdresult_t r = NFD_OpenDialog(&outPath, filters, 3, nullptr);
+
+            if (r == NFD_OKAY && outPath) {
+                std::string cubemapPath = outPath;
+                NFD_FreePath(outPath);
+
+                if (!std::filesystem::exists(cubemapPath)) {
+                    project_status = "Cubemap import failed:\nFile does not exist:\n" + cubemapPath;
+                    show_project_status = true;
+                    break;
+                }
+
+                renderer.import_base_cubemap(cubemapPath);
+                project_status = "Imported cubemap from:\n" + cubemapPath;
+                show_project_status = true;
+            }
+            else if (r == NFD_ERROR) {
+                project_status = std::string("Cubemap import dialog error:\n") +
+                                 (NFD_GetError() ? NFD_GetError() : "Unknown error");
+                show_project_status = true;
+            }
             break;
+        }
 
         case CubemapMenuAction::ExportCubemap:
-            project_status = "Cubemap export is not implemented yet.";
-            show_project_status = true;
+        {
+            if (!nfd_initialized) {
+                project_status = "Cubemap export failed:\nNative file dialog is not initialized.";
+                show_project_status = true;
+                break;
+            }
+
+            const nfdfilteritem_t filters[1] = {
+                    { "PNG Image", "png" }
+            };
+
+            nfdchar_t* outPath = nullptr;
+            nfdresult_t r = NFD_SaveDialog(&outPath, filters, 1, nullptr, "cubemap.png");
+
+            if (r == NFD_OKAY && outPath) {
+                std::string exportPath = ensurePngExtension(outPath);
+                NFD_FreePath(outPath);
+
+                std::filesystem::path p(exportPath);
+                if (p.has_parent_path()) {
+                    std::filesystem::create_directories(p.parent_path());
+                }
+
+                renderer.export_cubemap(exportPath);
+                project_status = "Exported cubemap to:\n" + exportPath;
+                show_project_status = true;
+            }
+            else if (r == NFD_ERROR) {
+                project_status = std::string("Cubemap export dialog error:\n") +
+                                 (NFD_GetError() ? NFD_GetError() : "Unknown error");
+                show_project_status = true;
+            }
             break;
+        }
 
         case CubemapMenuAction::None:
             break;
@@ -1015,6 +1267,9 @@ void Application::render_frame() {
     if (polyline_tool.panel_size.x <= 0.0f || polyline_tool.panel_size.y <= 0.0f) {
         polyline_tool.panel_size = ImVec2(left_panel_width, 560.0f * ui_scale);
     }
+    if (polygon_tool.panel_size.x <= 0.0f || polygon_tool.panel_size.y <= 0.0f) {
+        polygon_tool.panel_size = ImVec2(left_panel_width, 540.0f * ui_scale);
+    }
 
     if (outliner.panel_size.x <= 0.0f || outliner.panel_size.y <= 0.0f) {
         outliner.panel_size = ImVec2(right_panel_width, max_panel_height);
@@ -1025,6 +1280,9 @@ void Application::render_frame() {
 
     polyline_tool.panel_size.x = std::clamp(polyline_tool.panel_size.x, 280.0f * ui_scale, viewport->WorkSize.x * 0.45f);
     polyline_tool.panel_size.y = std::clamp(polyline_tool.panel_size.y, 380.0f * ui_scale, max_panel_height);
+
+    polygon_tool.panel_size.x = std::clamp(polygon_tool.panel_size.x, 280.0f * ui_scale, viewport->WorkSize.x * 0.45f);
+    polygon_tool.panel_size.y = std::clamp(polygon_tool.panel_size.y, 360.0f * ui_scale, max_panel_height);
 
     outliner.panel_size.x = std::clamp(outliner.panel_size.x, 300.0f * ui_scale, viewport->WorkSize.x * 0.50f);
     outliner.panel_size.y = std::clamp(outliner.panel_size.y, 500.0f * ui_scale, max_panel_height);
@@ -1160,32 +1418,25 @@ void Application::render_frame() {
             bool can_finish = polyline_tool.verts.size() >= 2;
             if (!can_finish) ImGui::BeginDisabled();
             if (ImGui::Button("Finish", ImVec2(button_width, 0.0f))) {
-                uint32_t newId = project.nextPrimitiveID();
-                auto line = std::make_unique<PolylinePrimitive>(newId);
-                line->color = polyline_tool.color;
-                line->width = polyline_tool.width;
-                line->verts = polyline_tool.verts;
-                line->setName(project.makeDefaultPrimitiveName(PrimitiveType::Polyline));
-
-                // project.rebuildAttachedCubemapFromProject();
-
-                outliner.selected_primitive_id = newId;
-                outliner.name_buffer_primitive_id = 0;
-
-                polyline_tool.armed_for_placement = false;
-                polyline_tool.verts.clear();
-                polyline_tool.reset(renderer);
-
-                project.addPrimitiveToDefaultLayer(std::move(line));
+                finishActivePolyline();
             }
             if (!can_finish) ImGui::EndDisabled();
 
+                // project.rebuildAttachedCubemapFromProject();
             ImGui::Spacing();
-            if (ImGui::Button("Cancel", ImVec2(-1.0f, 0.0f))) {
-                polyline_tool.armed_for_placement = false;
-                polyline_tool.verts.clear();
-                polyline_tool.reset(renderer);
-                project.rebuildAttachedCubemapFromProject();
+
+            float lower_button_width = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
+
+            bool can_undo_polyline = !polyline_tool.verts.empty();
+            if (!can_undo_polyline) ImGui::BeginDisabled();
+            if (ImGui::Button("Undo Last", ImVec2(lower_button_width, 0.0f))) {
+                undoActivePolylineVertex();
+            }
+            if (!can_undo_polyline) ImGui::EndDisabled();
+
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", ImVec2(lower_button_width, 0.0f))) {
+                cancelActivePolyline();
             }
 
             ImGui::Spacing();
@@ -1225,6 +1476,110 @@ void Application::render_frame() {
 
     if (!polyline_tool.show_panel) {
         polyline_tool.armed_for_placement = false;
+    }
+
+    // Polygon Tool Panel
+    if (polygon_tool.show_panel) {
+        ImGui::SetNextWindowPos(ImVec2(viewport->WorkPos.x + panel_margin, panel_y), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(polygon_tool.panel_size, ImGuiCond_Always);
+        ImGui::SetNextWindowBgAlpha(0.96f);
+
+        ImGuiWindowFlags polygonToolFlags =
+                ImGuiWindowFlags_NoMove |
+                ImGuiWindowFlags_NoResize |
+                ImGuiWindowFlags_NoCollapse;
+
+        if (ImGui::Begin("Polygon Tool", &polygon_tool.show_panel, polygonToolFlags)) {
+            polygon_tool.panel_size = ImGui::GetWindowSize();
+            bool preview_changed = false;
+
+            ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x);
+            ImGui::TextDisabled("%s", "Create a polygon by placing vertices on the globe, then finish the shape.");
+            ImGui::PopTextWrapPos();
+            ImGui::Spacing();
+
+            ImGui::TextUnformatted("Color");
+            ImGui::SetNextItemWidth(-1.0f);
+            preview_changed |= ImGui::ColorEdit4(
+                    "##PolygonToolColor",
+                    glm::value_ptr(polygon_tool.color),
+                    ImGuiColorEditFlags_NoInputs |
+                    ImGuiColorEditFlags_AlphaBar |
+                    ImGuiColorEditFlags_AlphaPreviewHalf
+            );
+
+            ImGui::Spacing();
+            ImGui::Text("Vertices: %d", static_cast<int>(polygon_tool.verts.size()));
+
+            ImGui::Spacing();
+            float button_width = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
+
+            if (ImGui::Button(polygon_tool.armed_for_placement ? "Adding Vertices" : "Start Polygon", ImVec2(button_width, 0.0f))) {
+                state.draw_mode = State::DrawMode::Polygon;
+                polygon_tool.armed_for_placement = true;
+            }
+
+            ImGui::SameLine();
+            bool can_finish = polygon_tool.verts.size() >= 3;
+            if (!can_finish) ImGui::BeginDisabled();
+            if (ImGui::Button("Finish", ImVec2(button_width, 0.0f))) {
+                finishActivePolygon();
+            }
+            if (!can_finish) ImGui::EndDisabled();
+
+            ImGui::Spacing();
+
+            float lower_button_width = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
+
+            bool can_undo_polygon = !polygon_tool.verts.empty();
+            if (!can_undo_polygon) ImGui::BeginDisabled();
+            if (ImGui::Button("Undo Last", ImVec2(lower_button_width, 0.0f))) {
+                undoActivePolygonVertex();
+            }
+            if (!can_undo_polygon) ImGui::EndDisabled();
+
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", ImVec2(lower_button_width, 0.0f))) {
+                cancelActivePolygon();
+            }
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Text("Mode: %s", drawModeLabel(static_cast<int>(state.draw_mode)));
+            ImGui::TextWrapped(
+                    "%s",
+                    polygon_tool.armed_for_placement
+                    ? "Status: active. Click the sphere to add vertices, then press Finish."
+                    : "Status: idle. Press Start Polygon to begin placing vertices."
+            );
+            ImGui::TextDisabled("%s", "Preview currently shows the polygon boundary only until backend polygon rendering is finished.");
+
+            if (preview_changed && polygon_tool.armed_for_placement && !polygon_tool.verts.empty()) {
+                refreshPolygonPreview();
+            }
+
+            drawPinnedResizeHandle(
+                    "##PolygonToolResizeHandle",
+                    polygon_tool.panel_size,
+                    ResizeHandleCorner::BottomRight,
+                    ui_scale,
+                    280.0f * ui_scale,
+                    360.0f * ui_scale,
+                    viewport->WorkSize.x * 0.45f,
+                    max_panel_height
+            );
+        }
+        ImGui::End();
+
+        if (!polygon_tool.show_panel) {
+            polygon_tool.armed_for_placement = false;
+            polygon_tool.verts.clear();
+            project.rebuildAttachedCubemapFromProject();
+        }
+    }
+
+    if (!polygon_tool.show_panel) {
+        polygon_tool.armed_for_placement = false;
     }
 
     // Primitives Panel
@@ -1394,6 +1749,26 @@ void Application::render_frame() {
                                 ImGui::TextUnformatted("Line Width");
                                 changed |= drawNormalizedWidthSlider("##SelectedPolylineWidth", line->width);
                                 drawSliderExtentsText("Thinner", "Thicker");
+                            }
+                        }
+                        else if (base->getType() == PrimitiveType::Polygon) {
+                            auto* polygon = dynamic_cast<PolygonPrimitive*>(base);
+                            if (polygon) {
+                                ImGui::Text("Vertices: %d", static_cast<int>(polygon->verts.size()));
+
+                                ImGui::Spacing();
+                                ImGui::TextUnformatted("Color");
+                                ImGui::SetNextItemWidth(-1.0f);
+                                changed |= ImGui::ColorEdit4(
+                                        "##SelectedPolygonColor",
+                                        glm::value_ptr(polygon->color),
+                                        ImGuiColorEditFlags_NoInputs |
+                                        ImGuiColorEditFlags_AlphaBar |
+                                        ImGuiColorEditFlags_AlphaPreviewHalf
+                                );
+
+                                ImGui::Spacing();
+                                ImGui::TextDisabled("%s", "Polygon currently renders as a closed outline until backend polygon rendering is finished.");
                             }
                         }
                         else {

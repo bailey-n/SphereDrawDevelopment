@@ -127,6 +127,17 @@ class Application {
 
     PolylineToolState polyline_tool;
 
+    // Polygon tool state
+    struct PolygonToolState {
+        bool show_panel = false;
+        bool armed_for_placement = false;
+        glm::vec4 color = glm::vec4(0.95f, 0.65f, 0.20f, 0.85f);
+        std::vector<glm::vec3> verts;
+        ImVec2 panel_size = ImVec2(0.0f, 0.0f);
+    };
+
+    PolygonToolState polygon_tool;
+
     struct OutlinerState {
         bool collapsed = false;
         uint32_t selected_primitive_id = 0;
@@ -151,6 +162,14 @@ private:
     void handle_event(const AppAction& action);
     void render_frame();
     void refreshPolylinePreview();
+    void refreshPolygonPreview();
+
+    void undoActivePolylineVertex();
+    void undoActivePolygonVertex();
+    void finishActivePolyline();
+    void finishActivePolygon();
+    void cancelActivePolyline();
+    void cancelActivePolygon();
 };
 
 #endif //APPLICATION_H
