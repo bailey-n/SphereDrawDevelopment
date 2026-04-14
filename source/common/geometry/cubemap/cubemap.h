@@ -159,6 +159,8 @@ public:
 
     bool update_point_primitive(const PointPrimitive& point);
     bool update_line_primitive(const PolylinePrimitive& line);
+
+    bool contains_cubemap_id(CubeMapId id);
 };
 
 

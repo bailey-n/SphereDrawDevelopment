@@ -900,6 +900,8 @@ void Application::refreshPolylinePreview() {
     }
 
     // Preview clicked vertices as temporary points
+    for (auto id: polyline_tool.temp_vertices_render_ids) if (renderer.contains_cubemap_id(id)) renderer.remove_point(id);
+    polyline_tool.temp_vertices_render_ids.clear();
     for (size_t i = 0; i < polyline_tool.verts.size(); ++i) {
         PointPrimitive preview_point(4000000000u - static_cast<uint32_t>(i));
         preview_point.p = polyline_tool.verts[i];
@@ -915,7 +917,7 @@ void Application::refreshPolylinePreview() {
         preview_line.color = polyline_tool.color;
         preview_line.width = polyline_tool.width;
         preview_line.verts = polyline_tool.verts;
-        if (polyline_tool.verts.size() > 2) {
+        if (polyline_tool.temp_line_render_id != UINT32_MAX) {
             renderer.remove_line(polyline_tool.temp_line_render_id);
         }
         polyline_tool.temp_line_render_id = renderer.add_new_line(preview_line);
@@ -964,6 +966,7 @@ void Application::undoActivePolylineVertex() {
     polyline_tool.verts.pop_back();
 
     if (polyline_tool.verts.empty()) {
+        renderer.reset();
         project.rebuildAttachedCubemapFromProject();
     } else {
         refreshPolylinePreview();
@@ -986,6 +989,9 @@ void Application::undoActivePolygonVertex() {
 
 void Application::finishActivePolyline() {
     if (!polyline_tool.armed_for_placement || polyline_tool.verts.size() < 2) {
+        polyline_tool.armed_for_placement = false;
+        polyline_tool.verts.clear();
+        polyline_tool.reset(renderer);
         return;
     }
 
@@ -996,14 +1002,15 @@ void Application::finishActivePolyline() {
     line->verts = polyline_tool.verts;
     line->setName(project.makeDefaultPrimitiveName(PrimitiveType::Polyline));
 
-    project.addPrimitiveToDefaultLayer(std::move(line));
-    project.rebuildAttachedCubemapFromProject();
-
     outliner.selected_primitive_id = newId;
     outliner.name_buffer_primitive_id = 0;
 
     polyline_tool.armed_for_placement = false;
     polyline_tool.verts.clear();
+    polyline_tool.reset(renderer);
+
+    project.addPrimitiveToDefaultLayer(std::move(line));
+    project.rebuildAttachedCubemapFromProject();
 }
 
 void Application::finishActivePolygon() {
@@ -1030,6 +1037,7 @@ void Application::finishActivePolygon() {
 void Application::cancelActivePolyline() {
     polyline_tool.armed_for_placement = false;
     polyline_tool.verts.clear();
+    polyline_tool.reset(renderer);
     project.rebuildAttachedCubemapFromProject();
 }
 
@@ -1422,7 +1430,6 @@ void Application::render_frame() {
             }
             if (!can_finish) ImGui::EndDisabled();
 
-                // project.rebuildAttachedCubemapFromProject();
             ImGui::Spacing();
 
             float lower_button_width = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
