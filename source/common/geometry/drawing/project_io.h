@@ -224,6 +224,7 @@ inline Project LoadProjectFromFile(const std::string& filepath){
         }
     }
     project.ensureDefaultLayer();
+    project.refreshNextLayerID();
 
     //Primitives
     project.primitives.clear();
