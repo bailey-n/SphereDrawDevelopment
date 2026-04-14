@@ -7,6 +7,7 @@
 #include <memory>
 #include <algorithm>
 
+#include "common_glm_operations.h"
 #include "primitive.h"
 #include "layer.h"
 #include "primitive_id_manager.h"
@@ -26,6 +27,8 @@ public:
 
     //Primitive storage (lookup by ID)
     std::unordered_map<uint32_t, std::unique_ptr<Primitive>> primitives;
+    bool has_selected_primitive = false;
+    uint32_t selected_primitive_id = UINT32_MAX;
 
     Project(){
         PrimIDManager::reset();
@@ -260,7 +263,7 @@ public:
         }
     }
 
-    void selectPrimitiveAt(glm::vec3 pos) {
+    bool selectPrimitiveAt(glm::vec3 pos) {
         std::vector<std::pair<uint32_t, CubeMapId>> selected_objects = cubemap_->get_drawn_elements_at(pos);
         for (auto object: selected_objects) {
             std::cout << object.first << std::endl;
@@ -268,10 +271,55 @@ public:
         if (!selected_objects.empty()) {
             auto id = selected_objects.front();
             cubemap_->select(id.second);
+            has_selected_primitive = true;
+            selected_primitive_id = id.first;
+            return true;
         }
-        else {
+        cubemap_->deselect();
+        has_selected_primitive = false;
+        selected_primitive_id = UINT32_MAX;
+        return false;
+    }
+
+    bool rotateSelectedPrimitive(glm::vec3 from, glm::vec3 to) {
+        if (!has_selected_primitive) return false;
+        if (!primitives.contains(selected_primitive_id)) return false;
+        glm::vec3 rotation_axis = glm::normalize(glm::cross(from, to));
+        glm::mat4x4 rotation_matrix = glm::rotate(glm::mat4x4(1.0f), std::acos(glm::dot(from, to)), rotation_axis);
+
+        auto& selected_primitive_base = *primitives.at(selected_primitive_id);
+        auto type = selected_primitive_base.getType();
+
+        PointPrimitive* point_primitive = nullptr;
+        PolylinePrimitive* polyline_primitive = nullptr;
+        PolygonPrimitive* polygon_primitive = nullptr;
+
+        switch (type) {
+        case PrimitiveType::Point:
+            point_primitive = (PointPrimitive*)(&selected_primitive_base);
+            point_primitive->p = apply_rotation(rotation_matrix, point_primitive->p);
+            // TODO: make update an actual update call so you don't have to delete then undelete.
             cubemap_->deselect();
+            cubemap_->remove_point_by_object_id(point_primitive->getID());
+            cubemap_->add_new_point(*point_primitive);
+            cubemap_->select(point_primitive->getID());
+            break;
+        case PrimitiveType::Polyline:
+            polyline_primitive = (PolylinePrimitive*)(&selected_primitive_base);
+            for (auto& v: polyline_primitive->verts) v = apply_rotation(rotation_matrix, v);
+            // TODO: make update an actual update call so you don't have to delete then undelete.
+            cubemap_->deselect();
+            cubemap_->remove_line_by_object_id(polyline_primitive->getID());
+            cubemap_->add_new_line(*polyline_primitive);
+            cubemap_->select(polyline_primitive->getID());
+            break;
+        case PrimitiveType::Polygon:
+            polygon_primitive = (PolygonPrimitive*)(&selected_primitive_base);
+            for (auto& v: polygon_primitive->verts) v = apply_rotation(rotation_matrix, v);
+            break;
         }
+
+        return true;
     }
 
 private:
