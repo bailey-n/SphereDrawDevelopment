@@ -1,7 +1,9 @@
 # CMake entry point
 cmake_minimum_required (VERSION 3.10.0)
 project (SphereDraw)
-set(CMAKE_CXX_STANDARD 26)
+set(CMAKE_CXX_STANDARD 20)
+
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
 
 find_package(OpenGL REQUIRED)
 
@@ -159,3 +161,5 @@ target_include_directories(nfd PUBLIC
 target_link_libraries(nfd PUBLIC comdlg32 ole32 uuid)
 
 add_subdirectory(test)
+
+set_target_properties(SphereDraw PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/../bin")
