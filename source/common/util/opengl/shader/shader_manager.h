@@ -1,11 +1,12 @@
 #ifndef SHADERMANAGER_H
 #define SHADERMANAGER_H
 
+#include "opengl_include.h"
+#include "shader_file.h"
+#include "shader_program.h"
 #include <vector>
 #include <map>
 #include <string>
-#include "shader_file.h"
-#include "shader_program.h"
 #include <array>
 
 class shaderManager {
@@ -37,6 +38,7 @@ public:
         std::string tessellation_control_path, std::string tessellation_evaluation_path);
     ~shaderManager();
     GLuint operator[](std::vector<std::string> shader_paths);
+    static GLuint get_program(std::vector<std::string> paths);
 };
 
 

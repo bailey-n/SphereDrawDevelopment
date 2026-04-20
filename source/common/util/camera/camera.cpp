@@ -1,16 +1,17 @@
 #include "camera.h"
+#include <iostream>
 
 Camera::Camera() :
 position(0.0f, 0.0f, 0.0f), target(1.0f, 0.0f, 0.0f), up(0.0f, 1.0f, 0.0f),
-view(glm::mat4(1.0f)), projection(glm::mat4(1.0f)) {}
+view(glm::mat4(1.0f)), projection(glm::mat4(1.0f)), scr_width(0), scr_height(0) {}
 
 Camera::Camera(const glm::mat4 &projection) :
 position(0.0f, 0.0f, 0.0f), target(1.0f, 0.0f, 0.0f), up(0.0f, 1.0f, 0.0f),
-view(glm::lookAt(position, target, up)), projection(projection) {}
+view(glm::lookAt(position, target, up)), projection(projection), scr_width(0), scr_height(0) {}
 
 Camera::Camera(const glm::vec3 &position, const glm::vec3 &direction, const glm::vec3 &up, const glm::mat4 projection)
 : position(position), target(position + direction), up(up),
-view(glm::lookAt(position, target, up)), projection(projection) {}
+view(glm::lookAt(position, target, up)), projection(projection), scr_width(0), scr_height(0) {}
 
 void Camera::update_view() {
     view = glm::lookAt(position, target, up);
@@ -129,6 +130,8 @@ void Camera::look_at(const glm::vec3 &location) {
 }
 
 bool Camera::bind(GLuint program, const glm::mat4 &model) const {
+    glViewport(0, 0, scr_width, scr_height);
+
     const GLint mvpID = glGetUniformLocation(program, "MVP");
     if (mvpID != -1) {
         glm::mat4 MVP = projection * view * model;
@@ -139,8 +142,14 @@ bool Camera::bind(GLuint program, const glm::mat4 &model) const {
     if (cameraPositionID != -1) {
         glUniform3fv(cameraPositionID, 1, glm::value_ptr(this->position));
     }
-
     return true;
+}
+
+void Camera::update_window(GLFWwindow *window) {
+    glfwGetWindowSize(window, &scr_width, &scr_height);
+    set_projection(glm::perspective(glm::radians(60.0f), (float)scr_width / (float)scr_height, 0.1f, 100.0f));
+    glViewport(0, 0, scr_width, scr_height);
+    // std::cout << scr_width << " " << scr_height << std::endl;
 }
 
 bool Camera::pop_change() {

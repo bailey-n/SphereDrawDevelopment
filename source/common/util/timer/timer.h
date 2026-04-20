@@ -22,4 +22,4 @@ public:
 };
 
 
-#endif //FANTASYPLATES_TIMER_H
+#endif //TIMER_H

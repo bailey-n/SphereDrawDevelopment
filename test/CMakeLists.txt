@@ -1,0 +1,28 @@
+add_executable(SphereDrawTest
+        test_main.cpp
+        test_primitive/test_primitive_id_mgr.h
+        test_primitive/test_primitive_id_mgr.cpp
+        test_project/test_json_roundtrip.cpp
+        ${CMAKE_SOURCE_DIR}/source/common/geometry/drawing/primitive_id_manager.cpp
+        ${CMAKE_SOURCE_DIR}/source/common/util/timer/timer.cpp
+)
+target_include_directories(SphereDrawTest PUBLIC
+        ${CMAKE_SOURCE_DIR}/external
+        ${CMAKE_SOURCE_DIR}/external/imgui
+        ${CMAKE_SOURCE_DIR}/external/imgui/backends
+        ${CMAKE_SOURCE_DIR}/source
+        ${CMAKE_SOURCE_DIR}/source/common
+        ${CMAKE_SOURCE_DIR}/source/common/geometry
+        ${CMAKE_SOURCE_DIR}/source/common/geometry/drawable
+        ${CMAKE_SOURCE_DIR}/source/common/geometry/meshes
+        ${CMAKE_SOURCE_DIR}/source/common/geometry/quadmap
+        ${CMAKE_SOURCE_DIR}/source/common/primitives
+        ${CMAKE_SOURCE_DIR}/source/common/util
+        ${CMAKE_SOURCE_DIR}/source/common/util/camera
+        ${CMAKE_SOURCE_DIR}/source/common/util/cubemap
+        ${CMAKE_SOURCE_DIR}/source/common/util/math
+        ${CMAKE_SOURCE_DIR}/source/common/util/opengl
+        ${CMAKE_SOURCE_DIR}/source/common/util/opengl/buffer
+        ${CMAKE_SOURCE_DIR}/source/common/util/opengl/shader
+        ${CMAKE_SOURCE_DIR}/source/common/util/timer
+)

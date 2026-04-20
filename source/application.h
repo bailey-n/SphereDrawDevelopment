@@ -1,30 +1,31 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
+#include "opengl_include.h"
 #include <iostream>
 #include <vector>
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include <deque>
 #include "application_action.h"
 #include "shader_manager.h"
-#include "planet.h"
 #include "camera.h"
 #include "shapes.h"
 #include "gui.h"
+#include "project.h"
+#include "project_io.h"
+#include "cubemap.h"
+#include "cubeface_mesh.h"
 
 class Application {
     const static int w_width;
     const static int w_height;
     static GLFWwindow* window;
     static bool initialized;
+    static bool nfd_initialized;
     static bool gui_change;
+    static bool mouse_moved;
     static std::deque<AppAction> event_queue;
     // Maps key, modifier bits to an associated shortcut action
     static std::map<std::pair<int, int>, AppAction> press_key_actions;
@@ -37,9 +38,17 @@ class Application {
     ImDrawData* draw_data = nullptr;
 
     // Main program
-    Planet planet;
     Camera camera;
     SphereDrawGUI app_gui;
+    Cubemap renderer;
+
+    std::optional<CubeFaceMesh> test_mesh;
+
+    // Project state (for Save/Load/New)
+    Project project;
+    std::string project_filepath = "project_files/out/project.json";
+    std::string project_status;
+    bool show_project_status = false;
 
     // APPLICATION INIT
     static bool init_glfw();
@@ -51,6 +60,8 @@ class Application {
     // Event callbacks
     static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
     static void mouseButtonCallback(GLFWwindow *win, int button, int action, int mods);
+    static void cursorPositionCallback(GLFWwindow *win, double xpos, double ypos);
+    static void windowSizeCallback(GLFWwindow* win, int width, int height);
 
     // Internal struct to hold state values
     struct State {
@@ -69,14 +80,77 @@ class Application {
         float camera_rotate_speed = 1.0f;
         double camera_zoom_speed = 1.0f;
 
+        bool track_mouse_drag = false;
+        glm::vec3 mouse_click_position;
+        glm::vec3 last_valid_mouse_position;
+
         enum DrawMode : unsigned char {
             None = 0,
             Point = 1,
             Polyline = 2,
+            Polygon = 3
         };
-        unsigned char draw_mode = Point;
+        DrawMode draw_mode = None;
     };
     State state;
+
+    // Point tool state
+    struct PointToolState {
+        bool show_panel = false;          // show point tool UI panel
+        bool armed_for_placement = false; // next sphere click places a point
+        glm::vec4 color = glm::vec4(1.0f, 0.2f, 0.2f, 1.0f);
+        float size = 0.007f;              // matches PointPrimitive default
+        ImVec2 panel_size = ImVec2(0.0f, 0.0f);
+    };
+
+    PointToolState point_tool;
+
+    //Polyline tool state
+    struct PolylineToolState {
+        bool show_panel = false;
+        bool armed_for_placement = false;
+        glm::vec4 color = glm::vec4(0.20f, 0.75f, 1.0f, 1.0f);
+        float width = 0.007f;
+        std::vector<glm::vec3> verts;
+        ImVec2 panel_size = ImVec2(0.0f, 0.0f);
+        std::vector<CubeMapId> temp_vertices_render_ids;
+        CubeMapId temp_line_render_id;
+
+        void reset(Cubemap& cubemap) {
+            verts.clear();
+            for (auto id: temp_vertices_render_ids) cubemap.remove_point(id);
+            cubemap.remove_line(temp_line_render_id);
+            temp_vertices_render_ids.clear();
+            temp_line_render_id = UINT32_MAX;
+        }
+    };
+
+    PolylineToolState polyline_tool;
+
+    // Polygon tool state
+    struct PolygonToolState {
+        bool show_panel = false;
+        bool armed_for_placement = false;
+        glm::vec4 color = glm::vec4(0.95f, 0.65f, 0.20f, 0.85f);
+        std::vector<glm::vec3> verts;
+        ImVec2 panel_size = ImVec2(0.0f, 0.0f);
+    };
+
+    PolygonToolState polygon_tool;
+
+    struct OutlinerState {
+        bool collapsed = false;
+        uint32_t active_layer_id = 0;
+        uint32_t selected_primitive_id = 0;
+        uint32_t name_buffer_primitive_id = 0;
+        uint32_t move_target_for_primitive_id = 0;
+        uint32_t move_target_layer_id = 0;
+        uint32_t layer_name_buffer_layer_id = 0;
+        char name_buffer[256] = {};
+        char layer_name_buffer[256] = {};
+        ImVec2 panel_size = ImVec2(0.0f, 0.0f);
+    };
+    OutlinerState outliner;
 
 public:
     static bool init();
@@ -92,6 +166,15 @@ private:
     void update_window();
     void handle_event(const AppAction& action);
     void render_frame();
+    void refreshPolylinePreview();
+    void refreshPolygonPreview();
+
+    void undoActivePolylineVertex();
+    void undoActivePolygonVertex();
+    void finishActivePolyline();
+    void finishActivePolygon();
+    void cancelActivePolyline();
+    void cancelActivePolygon();
 };
 
 #endif //APPLICATION_H

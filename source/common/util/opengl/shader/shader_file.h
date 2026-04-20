@@ -1,10 +1,10 @@
 #ifndef OGL_PROJECT_SHADER_FILE_H
 #define OGL_PROJECT_SHADER_FILE_H
 
+#include "opengl_include.h"
 #include <map>
 #include <string>
 #include <memory>
-#include <GL/glew.h>
 #include "vector"
 
 struct shaderFile {

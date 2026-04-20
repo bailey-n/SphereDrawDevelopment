@@ -3,6 +3,8 @@ cmake_minimum_required (VERSION 3.10.0)
 project (SphereDraw)
 set(CMAKE_CXX_STANDARD 20)
 
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
+
 find_package(OpenGL REQUIRED)
 
 
@@ -59,24 +61,22 @@ add_executable(SphereDraw
         source/application.h
         source/application.cpp
         source/application_action.h
-        source/planet.cpp
-        source/planet.h
         source/gui.h
         source/gui.cpp
 
         # Includes for rendered shapes
         # Meshes for OpenGL
-        source/common/geometry/meshes/mesh_util.cpp
-        source/common/geometry/meshes/mesh_util.h
-        source/common/geometry/meshes/sphere_mesh.cpp
-        source/common/geometry/meshes/sphere_mesh.h
+        source/common/util/opengl/buffer/mesh_util.cpp
+        source/common/util/opengl/buffer/mesh_util.h
+        source/common/geometry/cubemap/cubemap.cpp
+        source/common/geometry/cubemap/cubemap.h
         # Higher-level shape object classes
 
         # General utility includes
         source/common/util/camera/camera.cpp
         source/common/util/camera/camera.h
-        source/common/util/cubemap/cubemap_util.cpp
-        source/common/util/cubemap/cubemap_util.h
+        source/common/util/cubemap/cubemap_texture_util.cpp
+        source/common/util/cubemap/cubemap_texture_util.h
         source/common/util/math/shapes.cpp
         source/common/util/math/shapes.h
         source/common/util/timer/timer.cpp
@@ -94,11 +94,39 @@ add_executable(SphereDraw
         source/common/util/opengl/shader/shader_file.cpp
         source/common/util/opengl/shader/shader_program.cpp
         source/common/util/opengl/shader/shader_program.h
-
+        source/common/geometry/drawing/primitive_id_manager.h
+        source/common/geometry/drawing/primitive_id_manager.cpp
+        source/common/geometry/cubemap/cubemap_util.h
+        source/common/geometry/cubemap/cubeface.h
+        source/common/geometry/cubemap/cubeface.cpp
+        source/common/geometry/cubemap/cubemap_util.cpp
+        source/common/util/math/common_glm_operations.h
+        source/common/util/math/common_glm_operations.cpp
+        source/common/util/math/vertex_manipulation.cpp
+        source/common/util/math/vertex_manipulation.h
+        source/common/geometry/meshes/cubeface_mesh.h
+        source/common/geometry/meshes/cubeface_mesh.cpp
+        source/common/util/opengl/buffer/texture_buffer.h
+        source/common/util/opengl/buffer/texture_buffer.cpp
+        source/common/geometry/meshes/drawn_mesh.cpp
+        source/common/geometry/meshes/drawn_mesh.h
+        source/common/geometry/meshes/reference_texture_mesh.cpp
+        source/common/geometry/meshes/reference_texture_mesh.h
+        source/common/util/opengl/opengl_include.h
+        source/common/util/math/sweepline_util.cpp
+        source/common/util/math/sweepline_util.h
+        source/common/util/math/polygon_generation/segments/lineloop_segment.cpp
+        source/common/util/math/polygon_generation/segments/lineloop_segment.h
+        source/common/util/math/polygon_generation/triangle_tree/triangle_tree.cpp
+        source/common/util/math/polygon_generation/triangle_tree/triangle_tree.h
+        source/common/util/math/linalg.h
+        source/common/util/math/linalg.cpp
+        external/stb_image_write.h
         # NEW INCLUDES (Organize later)
 )
 target_link_libraries(SphereDraw
         ${ALL_LIBS}
+        nfd
 )
 target_include_directories(SphereDraw PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/external
@@ -107,8 +135,9 @@ target_include_directories(SphereDraw PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/source
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/geometry
-        ${CMAKE_CURRENT_SOURCE_DIR}/source/common/geometry/meshes
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/geometry/drawing
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/common/geometry/meshes
+        ${CMAKE_CURRENT_SOURCE_DIR}/source/common/geometry/cubemap
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/util
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/util/camera
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/util/cubemap
@@ -118,3 +147,19 @@ target_include_directories(SphereDraw PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/util/opengl/shader
         ${CMAKE_CURRENT_SOURCE_DIR}/source/common/util/timer
 )
+
+# ---- Native File Dialog (Windows) ----
+add_library(nfd STATIC
+        external/nfd/nfd_win.cpp
+)
+
+target_include_directories(nfd PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/nfd/include
+)
+
+# Windows system libs NFD needs
+target_link_libraries(nfd PUBLIC comdlg32 ole32 uuid)
+
+add_subdirectory(test)
+
+set_target_properties(SphereDraw PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/../bin")
