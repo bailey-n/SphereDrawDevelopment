@@ -25,3 +25,17 @@ void print_current_bound_VAO() {
     glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &boundVAO);
     std::cout << "Bound VAO: " << boundVAO << std::endl;
 }
+
+// std::tuple<std::vector<glm::vec2>, std::vector<glm::vec2>> split_line(std::vector<glm::vec2>& points) {
+//     glm::vec2& x1 = points[0];
+//     glm::vec2& x2 = points[points.size()-1];
+//     glm::vec2 dir = x2 - x1;
+//     glm::vec2 norm = {dir.x, -dir.y};
+//     std::vector<glm::vec2> below;
+//     std::vector<glm::vec2> above;
+//
+//     bool curr_above = glm::dot((points[1] - x1), norm) > 0.00001f;
+//     for (int i = 2; i < points.size(); i++) {
+//         if ()
+//     }
+// }
